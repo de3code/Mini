@@ -11,7 +11,7 @@ const parseList = (envVar, fallback) => {
 
 module.exports = {
   // MongoDB configuration for storing sessions
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://darexmucheri:cMd7EoTwGglJGXwR@cluster0.uwf6z.mongodb.net/mini?retryWrites=true&w=majority&appName=Cluster0',
+  MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://darexmucheri:cMd7EoTwGglJGXwR@cluster0.uwf6z.mongodb.net/mini2?retryWrites=true&w=majority&appName=Cluster0',
   
   // Bot behavior
   AUTO_VIEW_STATUS: process.env.AUTO_VIEW_STATUS || 'true',
