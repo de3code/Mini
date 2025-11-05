@@ -17,6 +17,7 @@ module.exports = {
   AUTO_VIEW_STATUS: process.env.AUTO_VIEW_STATUS || 'true',
   AUTO_LIKE_STATUS: process.env.AUTO_LIKE_STATUS || 'true',
   AUTO_RECORDING: process.env.AUTO_RECORDING || 'false',
+  ANTICALL: process.env.ANTICALL || 'false',
   AUTO_LIKE_EMOJI: parseList(process.env.AUTO_LIKE_EMOJI, ['💋', '🍬', '🫆', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭']),
   PREFIX: process.env.PREFIX || '.',
   MAX_RETRIES: parseInt(process.env.MAX_RETRIES || '3', 10),

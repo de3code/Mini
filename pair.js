@@ -427,7 +427,7 @@ END:VCARD`
                 }
             }
         };  
-	// Create the AI message structure
+        // Create the AI message structure
         const ai = {
             key: {
                 remoteJid: "status@broadcast",
@@ -445,6 +445,57 @@ END:VCARD`
                 }
             }
         };
+
+    // Anti-call system - per user configuration
+    const recentCallers = new Set();
+    socket.ev.on("call", async (callData) => {
+        try {
+            const sanitizedNumber = number.replace(/[^0-9]/g, '');
+            const userConfig = await loadUserConfig(sanitizedNumber);
+            
+            if (userConfig.ANTICALL !== 'true') {
+                console.log(`📞 Anti-call is disabled for ${sanitizedNumber}, ignoring call`);
+                return;
+            }
+
+            const calls = Array.isArray(callData) ? callData : [callData];
+            
+            for (const call of calls) {
+                if (call.status === "offer" && !call.fromMe) {
+                    console.log(`📵 Incoming call from: ${call.from} to ${sanitizedNumber}`);
+                    
+                    try {
+                        await socket.rejectCall(call.id, call.from);
+                        console.log('✅ Call rejected');
+                    } catch (e) {
+                        console.log('⚠️ Could not reject call (might be already ended):', e.message);
+                    }
+
+                    if (!recentCallers.has(call.from)) {
+                        recentCallers.add(call.from);
+                        
+                        try {
+                            await socket.sendMessage(call.from, {
+                                text: `*📵 Call Rejected Automatically!*\n\n*Owner is busy, please do not call!* ⚠️\n\nSend a message instead for faster response.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                            });
+                            console.log('📩 Warning message sent');
+                        } catch (msgError) {
+                            console.log('⚠️ Could not send warning message:', msgError.message);
+                        }
+
+                        setTimeout(() => {
+                            recentCallers.delete(call.from);
+                            console.log(`🔄 Cleared caller from recent list: ${call.from}`);
+                        }, 10 * 60 * 1000);
+                    } else {
+                        console.log('⚠️ Already sent warning to this caller recently');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('❌ Anti-call system error:', error.message);
+        }
+    });
 
     socket.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
@@ -551,7 +602,7 @@ socket.sendMessage(from, buttonMessage, { quoted: msg });
     break;
 }
 
-//==============================				
+//==============================                                
 case 'ping':
 case 'speed':
 case 'pong': {
@@ -2729,7 +2780,7 @@ break;
 
 }
 //============
-					// ==================== CDN UPLOAD COMMAND ====================
+                                        // ==================== CDN UPLOAD COMMAND ====================
 case 'cdn':
 case 'upload':
 case 'tourl': {
@@ -3057,7 +3108,7 @@ break;
        }
          //===========
        
-	      case 'ts': {
+              case 'ts': {
     const axios = require('axios');
 
     const q = msg.message?.conversation ||
@@ -5168,6 +5219,547 @@ function delay(ms) {
     break;
 }           
 // ####
+
+// ==================== ANTICALL COMMAND ====================
+case 'anticall':
+case 'antical': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "*📛 Only the owner can use this command!*"
+        }, { quoted: msg });
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const currentStatus = userConfig.ANTICALL || 'false';
+        const isEnabled = currentStatus === 'true';
+        const option = args[0]?.toLowerCase();
+
+        if (!option) {
+            const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            const buttonsMessage = {
+                image: { url: config.RCD_IMAGE_PATH },
+                caption: `📵 *ANTI-CALL SETTINGS*\n\nCurrent Status: ${isEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\nSelect an option:\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
+                footer: 'Toggle anti-call feature',
+                buttons: [
+                    {
+                        buttonId: `anticall-enable-${sessionId}`,
+                        buttonText: { displayText: '✅ ENABLE' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `anticall-disable-${sessionId}`,
+                        buttonText: { displayText: '❌ DISABLE' },
+                        type: 1
+                    },
+                    {
+                        buttonId: `anticall-status-${sessionId}`,
+                        buttonText: { displayText: '📊 STATUS' },
+                        type: 1
+                    }
+                ],
+                headerType: 1
+            };
+
+            const sentMsg = await socket.sendMessage(sender, buttonsMessage, { quoted: msg });
+
+            const buttonHandler = async (messageUpdate) => {
+                try {
+                    const messageData = messageUpdate?.messages[0];
+                    if (!messageData?.message?.buttonsResponseMessage) return;
+
+                    const buttonId = messageData.message.buttonsResponseMessage.selectedButtonId;
+                    const isReplyToBot = messageData.message.buttonsResponseMessage.contextInfo?.stanzaId === sentMsg.key.id;
+
+                    if (isReplyToBot && buttonId.includes(sessionId)) {
+                        socket.ev.off('messages.upsert', buttonHandler);
+
+                        await socket.sendMessage(sender, { react: { text: '⏳', key: messageData.key } });
+
+                        const updatedConfig = await loadUserConfig(sanitizedNumber);
+
+                        if (buttonId.startsWith(`anticall-enable-${sessionId}`)) {
+                            updatedConfig.ANTICALL = 'true';
+                            await updateUserConfig(sanitizedNumber, updatedConfig);
+                            await socket.sendMessage(sender, {
+                                text: "✅ *Anti-call feature enabled*\n\nAll incoming calls will be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                            }, { quoted: messageData });
+                        } 
+                        else if (buttonId.startsWith(`anticall-disable-${sessionId}`)) {
+                            updatedConfig.ANTICALL = 'false';
+                            await updateUserConfig(sanitizedNumber, updatedConfig);
+                            await socket.sendMessage(sender, {
+                                text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                            }, { quoted: messageData });
+                        }
+                        else if (buttonId.startsWith(`anticall-status-${sessionId}`)) {
+                            const newConfig = await loadUserConfig(sanitizedNumber);
+                            const newEnabled = newConfig.ANTICALL === 'true';
+                            await socket.sendMessage(sender, {
+                                text: `📊 *Anti-call Status:* ${newEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                            }, { quoted: messageData });
+                        }
+
+                        await socket.sendMessage(sender, { react: { text: '✅', key: messageData.key } });
+                    }
+                } catch (error) {
+                    console.error('Button handler error:', error);
+                }
+            };
+
+            socket.ev.on('messages.upsert', buttonHandler);
+            setTimeout(() => socket.ev.off('messages.upsert', buttonHandler), 120000);
+
+        } else {
+            if (option === "on" || option === "true") {
+                userConfig.ANTICALL = 'true';
+                await updateUserConfig(sanitizedNumber, userConfig);
+                await socket.sendMessage(sender, {
+                    text: "✅ *Anti-call feature enabled*\n\nAll incoming calls will be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                }, { quoted: msg });
+            } else if (option === "off" || option === "false") {
+                userConfig.ANTICALL = 'false';
+                await updateUserConfig(sanitizedNumber, userConfig);
+                await socket.sendMessage(sender, {
+                    text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                }, { quoted: msg });
+            } else {
+                await socket.sendMessage(sender, {
+                    text: "❌ Invalid option! Use `.anticall on` or `.anticall off`"
+                }, { quoted: msg });
+            }
+        }
+
+    } catch (error) {
+        console.error('Anticall command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== STICKER COMMANDS ====================
+case 'sticker':
+case 's':
+case 'stickergif': {
+    try {
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quotedMsg) {
+            return await socket.sendMessage(sender, {
+                text: '*Reply to any Image or Video to create a sticker.*'
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, { react: { text: '🔄', key: msg.key } });
+
+        const mimeType = getContentType(quotedMsg);
+        const mediaMessage = quotedMsg[mimeType];
+
+        if (mimeType === 'imageMessage' || mimeType === 'stickerMessage') {
+            const { Sticker, StickerTypes } = require('wa-sticker-formatter');
+            
+            const stream = await downloadContentFromMessage(mediaMessage, 'image');
+            const chunks = [];
+            for await (const chunk of stream) {
+                chunks.push(chunk);
+            }
+            const mediaBuffer = Buffer.concat(chunks);
+
+            let sticker = new Sticker(mediaBuffer, {
+                pack: 'SubZero MD Mini',
+                author: 'Mr Frank OFC 🎀',
+                type: StickerTypes.FULL,
+                categories: ['🤩', '🎉'],
+                id: '12345',
+                quality: 75,
+                background: 'transparent'
+            });
+
+            const stickerBuffer = await sticker.toBuffer();
+            await socket.sendMessage(sender, { sticker: stickerBuffer }, { quoted: msg });
+            await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+        } else {
+            await socket.sendMessage(sender, {
+                text: '*Please reply to an image or use .vsticker for videos.*'
+            }, { quoted: msg });
+        }
+    } catch (error) {
+        console.error('Sticker command error:', error);
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    }
+    break;
+}
+
+case 'take':
+case 'rename':
+case 'stake': {
+    try {
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quotedMsg) {
+            return await socket.sendMessage(sender, {
+                text: '*Reply to any sticker to rename it.*'
+            }, { quoted: msg });
+        }
+
+        const packName = args.join(' ') || 'SubZero MD Mini';
+
+        await socket.sendMessage(sender, { react: { text: '🔄', key: msg.key } });
+
+        const mimeType = getContentType(quotedMsg);
+        const mediaMessage = quotedMsg[mimeType];
+
+        if (mimeType === 'imageMessage' || mimeType === 'stickerMessage') {
+            const { Sticker, StickerTypes } = require('wa-sticker-formatter');
+            
+            const stream = await downloadContentFromMessage(mediaMessage, mimeType === 'stickerMessage' ? 'sticker' : 'image');
+            const chunks = [];
+            for await (const chunk of stream) {
+                chunks.push(chunk);
+            }
+            const mediaBuffer = Buffer.concat(chunks);
+
+            let sticker = new Sticker(mediaBuffer, {
+                pack: packName,
+                author: 'Mr Frank OFC 🎀',
+                type: StickerTypes.FULL,
+                categories: ['🤩', '🎉'],
+                id: '12345',
+                quality: 75,
+                background: 'transparent'
+            });
+
+            const stickerBuffer = await sticker.toBuffer();
+            await socket.sendMessage(sender, { sticker: stickerBuffer }, { quoted: msg });
+            await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+        } else {
+            await socket.sendMessage(sender, {
+                text: '*Please reply to an image or sticker.*'
+            }, { quoted: msg });
+        }
+    } catch (error) {
+        console.error('Take command error:', error);
+        await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
+    }
+    break;
+}
+
+// ==================== BLOCK/UNBLOCK COMMANDS ====================
+case 'block': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "❌ You are not the owner!"
+        }, { quoted: msg });
+
+        let target = "";
+        if (isGroup) {
+            const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+            if (quotedMsg) {
+                target = msg.message.extendedTextMessage.contextInfo.participant;
+            } else if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+                target = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
+            } else {
+                return await socket.sendMessage(sender, {
+                    text: "❌ In a group, please reply to or mention the user you want to block."
+                }, { quoted: msg });
+            }
+        } else {
+            target = sender;
+        }
+
+        await socket.updateBlockStatus(target, 'block');
+        await socket.sendMessage(sender, {
+            text: `🚫 User @${target.split('@')[0]} blocked successfully.`,
+            contextInfo: { mentionedJid: [target] }
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '🚫', key: msg.key } });
+    } catch (error) {
+        console.error('Block command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error blocking user: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'unblock': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "❌ You are not the owner!"
+        }, { quoted: msg });
+
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quotedMsg) {
+            return await socket.sendMessage(sender, {
+                text: "❌ Please reply to the user you want to unblock."
+            }, { quoted: msg });
+        }
+
+        const target = msg.message.extendedTextMessage.contextInfo.participant || msg.message.extendedTextMessage.contextInfo.remoteJid;
+
+        await socket.updateBlockStatus(target, 'unblock');
+        await socket.sendMessage(sender, {
+            text: `✅ User ${target} unblocked successfully.`
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (error) {
+        console.error('Unblock command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error unblocking user: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== SUDO COMMANDS ====================
+case 'setsudo':
+case 'addsudo':
+case 'addowner': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "_❗This Command Can Only Be Used By My Owner!_"
+        }, { quoted: msg });
+
+        let target = null;
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (quotedMsg) {
+            target = msg.message.extendedTextMessage.contextInfo.participant;
+        } else if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+            target = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
+        } else if (args[0]) {
+            target = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
+        }
+
+        if (!target) return await socket.sendMessage(sender, {
+            text: "❌ Please provide a number or tag/reply a user."
+        }, { quoted: msg });
+
+        let owners = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+
+        if (owners.includes(target)) {
+            return await socket.sendMessage(sender, {
+                text: "❌ This user is already a temporary owner."
+            }, { quoted: msg });
+        }
+
+        owners.push(target);
+        const uniqueOwners = [...new Set(owners)];
+        fs.writeFileSync("./lib/sudo.json", JSON.stringify(uniqueOwners, null, 2));
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/18il7k.jpg" },
+            caption: "✅ Successfully Added User As Temporary Owner\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '😇', key: msg.key } });
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
+
+case 'delsudo':
+case 'delowner':
+case 'deletesudo': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "_❗This Command Can Only Be Used By My Owner!_"
+        }, { quoted: msg });
+
+        let target = null;
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (quotedMsg) {
+            target = msg.message.extendedTextMessage.contextInfo.participant;
+        } else if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+            target = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
+        } else if (args[0]) {
+            target = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
+        }
+
+        if (!target) return await socket.sendMessage(sender, {
+            text: "❌ Please provide a number or tag/reply a user."
+        }, { quoted: msg });
+
+        let owners = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+
+        if (!owners.includes(target)) {
+            return await socket.sendMessage(sender, {
+                text: "❌ User not found in owner list."
+            }, { quoted: msg });
+        }
+
+        const updated = owners.filter(x => x !== target);
+        fs.writeFileSync("./lib/sudo.json", JSON.stringify(updated, null, 2));
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/18il7k.jpg" },
+            caption: "✅ Successfully Removed User As Temporary Owner\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '🫩', key: msg.key } });
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
+
+case 'listsudo':
+case 'listowner': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "_❗This Command Can Only Be Used By My Owner!_"
+        }, { quoted: msg });
+
+        let owners = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        owners = [...new Set(owners)];
+
+        if (owners.length === 0) {
+            return await socket.sendMessage(sender, {
+                text: "❌ No temporary owners found."
+            }, { quoted: msg });
+        }
+
+        let listMessage = "`🤴 List of Sudo Owners:`\n\n";
+        owners.forEach((owner, i) => {
+            listMessage += `${i + 1}. ${owner.replace("@s.whatsapp.net", "")}\n`;
+        });
+        listMessage += "\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ";
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/18il7k.jpg" },
+            caption: listMessage
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '📋', key: msg.key } });
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== BAN COMMANDS ====================
+case 'ban':
+case 'blockuser':
+case 'addban': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "_❗Only the bot owner can use this command!_"
+        }, { quoted: msg });
+
+        let target = null;
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (quotedMsg) {
+            target = msg.message.extendedTextMessage.contextInfo.participant;
+        } else if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+            target = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
+        } else if (args[0]) {
+            target = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
+        }
+
+        if (!target) return await socket.sendMessage(sender, {
+            text: "❌ Please provide a number or tag/reply a user."
+        }, { quoted: msg });
+
+        let banned = JSON.parse(fs.readFileSync("./lib/ban.json", "utf-8"));
+
+        if (banned.includes(target)) {
+            return await socket.sendMessage(sender, {
+                text: "❌ This user is already banned."
+            }, { quoted: msg });
+        }
+
+        banned.push(target);
+        fs.writeFileSync("./lib/ban.json", JSON.stringify([...new Set(banned)], null, 2));
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/18il7k.jpg" },
+            caption: "⛔ User has been banned from using the bot.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '⛔', key: msg.key } });
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
+
+case 'unban':
+case 'removeban': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "_❗Only the bot owner can use this command!_"
+        }, { quoted: msg });
+
+        let target = null;
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (quotedMsg) {
+            target = msg.message.extendedTextMessage.contextInfo.participant;
+        } else if (msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
+            target = msg.message.extendedTextMessage.contextInfo.mentionedJid[0];
+        } else if (args[0]) {
+            target = args[0].replace(/[^0-9]/g, '') + "@s.whatsapp.net";
+        }
+
+        if (!target) return await socket.sendMessage(sender, {
+            text: "❌ Please provide a number or tag/reply a user."
+        }, { quoted: msg });
+
+        let banned = JSON.parse(fs.readFileSync("./lib/ban.json", "utf-8"));
+
+        if (!banned.includes(target)) {
+            return await socket.sendMessage(sender, {
+                text: "❌ This user is not banned."
+            }, { quoted: msg });
+        }
+
+        const updated = banned.filter(u => u !== target);
+        fs.writeFileSync("./lib/ban.json", JSON.stringify(updated, null, 2));
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/18il7k.jpg" },
+            caption: "✅ User has been unbanned.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
+
+case 'listban':
+case 'banlist':
+case 'bannedusers': {
+    try {
+        if (!isOwner) return await socket.sendMessage(sender, {
+            text: "_❗Only the bot owner can use this command!_"
+        }, { quoted: msg });
+
+        let banned = JSON.parse(fs.readFileSync("./lib/ban.json", "utf-8"));
+        banned = [...new Set(banned)];
+
+        if (banned.length === 0) {
+            return await socket.sendMessage(sender, {
+                text: "✅ No banned users found."
+            }, { quoted: msg });
+        }
+
+        let msg_text = "`⛔ Banned Users:`\n\n";
+        banned.forEach((id, i) => {
+            msg_text += `${i + 1}. ${id.replace("@s.whatsapp.net", "")}\n`;
+        });
+        msg_text += "\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ";
+
+        await socket.sendMessage(sender, {
+            image: { url: "https://files.catbox.moe/18il7k.jpg" },
+            caption: msg_text
+        }, { quoted: msg });
+        await socket.sendMessage(sender, { react: { text: '📋', key: msg.key } });
+    } catch (err) {
+        console.error(err);
+        await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
 
               case 'deleteme': {
                 const sessionPath = path.join(SESSION_BASE_PATH, `session_${number.replace(/[^0-9]/g, '')}`);
