@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 __path = process.cwd()
 const bodyParser = require("body-parser");
-const PORT = process.env.PORT || 7860;
+const PORT = process.env.PORT || 5000;
 let code = require('./pair');
 
 require('events').EventEmitter.defaultMaxListeners = 500;
