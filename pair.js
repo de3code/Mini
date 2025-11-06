@@ -6324,6 +6324,132 @@ case 'setgroupdesc': {
     break;
 }
 
+case 'opentime': {
+    try {
+        if (!isGroup) return await socket.sendMessage(sender, {
+            text: "❌ This command only works in groups."
+        }, { quoted: msg });
+        
+        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+            text: "❌ Only group admins can use this command."
+        }, { quoted: msg });
+        
+        if (!isBotAdmin) return await socket.sendMessage(sender, {
+            text: "❌ I need to be an admin to schedule group opening."
+        }, { quoted: msg });
+
+        if (!args[0] || !args[1]) {
+            return await socket.sendMessage(sender, {
+                text: "❌ Please provide time and unit.\n\nExample: .opentime 10 minute\n\nUnits: second, minute, hour, day"
+            }, { quoted: msg });
+        }
+
+        let timer;
+        const timeValue = parseInt(args[0]);
+        const timeUnit = args[1].toLowerCase();
+
+        if (timeUnit === 'second') {
+            timer = timeValue * 1000;
+        } else if (timeUnit === 'minute') {
+            timer = timeValue * 60000;
+        } else if (timeUnit === 'hour') {
+            timer = timeValue * 3600000;
+        } else if (timeUnit === 'day') {
+            timer = timeValue * 86400000;
+        } else {
+            return await socket.sendMessage(sender, {
+                text: "*Select:*\nsecond\nminute\nhour\nday\n\n*Example:* .opentime 10 minute"
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            text: `⏰ Group will automatically open after ${timeValue} ${timeUnit}(s).`
+        }, { quoted: msg });
+
+        setTimeout(async () => {
+            try {
+                await socket.groupSettingUpdate(sender, 'not_announcement');
+                await socket.sendMessage(sender, {
+                    text: "🔓 *Good News!* Group has been opened. Enjoy! 🎉\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                }, { quoted: msg });
+            } catch (err) {
+                console.error('Auto-open error:', err);
+            }
+        }, timer);
+
+        await socket.sendMessage(sender, { react: { text: '🔑', key: msg.key } });
+    } catch (error) {
+        console.error('Opentime command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+case 'closetime': {
+    try {
+        if (!isGroup) return await socket.sendMessage(sender, {
+            text: "❌ This command only works in groups."
+        }, { quoted: msg });
+        
+        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+            text: "❌ Only group admins can use this command."
+        }, { quoted: msg });
+        
+        if (!isBotAdmin) return await socket.sendMessage(sender, {
+            text: "❌ I need to be an admin to schedule group closing."
+        }, { quoted: msg });
+
+        if (!args[0] || !args[1]) {
+            return await socket.sendMessage(sender, {
+                text: "❌ Please provide time and unit.\n\nExample: .closetime 10 minute\n\nUnits: second, minute, hour, day"
+            }, { quoted: msg });
+        }
+
+        let timer;
+        const timeValue = parseInt(args[0]);
+        const timeUnit = args[1].toLowerCase();
+
+        if (timeUnit === 'second') {
+            timer = timeValue * 1000;
+        } else if (timeUnit === 'minute') {
+            timer = timeValue * 60000;
+        } else if (timeUnit === 'hour') {
+            timer = timeValue * 3600000;
+        } else if (timeUnit === 'day') {
+            timer = timeValue * 86400000;
+        } else {
+            return await socket.sendMessage(sender, {
+                text: "*Select:*\nsecond\nminute\nhour\nday\n\n*Example:* .closetime 10 minute"
+            }, { quoted: msg });
+        }
+
+        await socket.sendMessage(sender, {
+            text: `⏰ Group will automatically close after ${timeValue} ${timeUnit}(s).`
+        }, { quoted: msg });
+
+        setTimeout(async () => {
+            try {
+                await socket.groupSettingUpdate(sender, 'announcement');
+                await socket.sendMessage(sender, {
+                    text: "🔐 *Time's Up!* Group has been auto-closed.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                }, { quoted: msg });
+            } catch (err) {
+                console.error('Auto-close error:', err);
+            }
+        }, timer);
+
+        await socket.sendMessage(sender, { react: { text: '🔒', key: msg.key } });
+    } catch (error) {
+        console.error('Closetime command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
               case 'deleteme': {
                 const sessionPath = path.join(SESSION_BASE_PATH, `session_${number.replace(/[^0-9]/g, '')}`);
                 if (fs.existsSync(sessionPath)) {
