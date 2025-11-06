@@ -2009,6 +2009,7 @@ case 'allcommands': {
 *│*🔍 *Search:* imdb, npm, gitstalk, news, cricket
 *│*🤖 *AI:* ai, aiimg, ask, logo, fancy, scanqr
 *│*🛠️ *Tools:* tourl, screenshot, winfo, tinyurl
+*│*👥 *Group:* kick, add, promote, demote, mute, hidetag
 *│*👑 *Owner:* settings, restart, stats, broadcast
 *│*⚡ *Other:* alive, menu, deleteme, bomb
 ╰──────────●●►
@@ -2083,6 +2084,11 @@ case 'menu': {
                                         title: '🛠️ Tools Menu',
                                         description: 'Utility and tool commands',
                                         id: `${config.PREFIX}toolsmenu`,
+                                    },
+                                    {
+                                        title: '👥 Group Menu',
+                                        description: 'Group management commands',
+                                        id: `${config.PREFIX}groupmenu`,
                                     },
                                     {
                                         title: '👑 Owner Menu',
@@ -2183,6 +2189,187 @@ case 'alive': {
     }, { quoted: msg });
     break;
 }         //==============================
+
+// ==================== CATEGORY MENUS ====================
+
+case 'groupmenu': {
+    await socket.sendMessage(from, { react: { text: '👥', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '👥 GROUP MENU',
+            `
+*╭─「 GROUP MANAGEMENT 」*
+*│* ${config.PREFIX}kick / ${config.PREFIX}remove - Remove user from group
+*│* ${config.PREFIX}add - Add member to group
+*│* ${config.PREFIX}promote / ${config.PREFIX}admin - Make user admin
+*│* ${config.PREFIX}demote - Remove admin privileges
+*│* ${config.PREFIX}kickall - Remove all members (owner only)
+╰──────────●●►
+
+*╭─「 GROUP SETTINGS 」*
+*│* ${config.PREFIX}mute / ${config.PREFIX}lock / ${config.PREFIX}close - Close group
+*│* ${config.PREFIX}unmute / ${config.PREFIX}unlock / ${config.PREFIX}open - Open group
+*│* ${config.PREFIX}updategname - Update group name
+*│* ${config.PREFIX}updategdesc - Update group description
+*│* ${config.PREFIX}opentime <time> <unit> - Schedule opening
+*│* ${config.PREFIX}closetime <time> <unit> - Schedule closing
+╰──────────●●►
+
+*╭─「 GROUP UTILITIES 」*
+*│* ${config.PREFIX}hidetag / ${config.PREFIX}htag - Tag all (hidden)
+*│* ${config.PREFIX}tagall - Tag all members visibly
+*│* ${config.PREFIX}leave / ${config.PREFIX}exit - Bot leaves group
+*│* ${config.PREFIX}invite / ${config.PREFIX}grouplink - Get invite link
+*│* ${config.PREFIX}revoke / ${config.PREFIX}resetlink - Reset invite link
+*│* ${config.PREFIX}ginfo / ${config.PREFIX}groupinfo - Group information
+╰──────────●●►`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
+
+case 'dlmenu': {
+    await socket.sendMessage(from, { react: { text: '📥', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '📥 DOWNLOAD MENU',
+            `
+*╭─「 MEDIA DOWNLOAD 」*
+*│* ${config.PREFIX}song - Download audio from YouTube
+*│* ${config.PREFIX}tiktok - Download TikTok videos
+*│* ${config.PREFIX}fb - Download Facebook videos
+*│* ${config.PREFIX}ig - Download Instagram content
+*│* ${config.PREFIX}yt - Download YouTube videos
+*│* ${config.PREFIX}apk - Download APK files
+╰──────────●●►`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
+
+case 'searchmenu': {
+    await socket.sendMessage(from, { react: { text: '🔍', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '🔍 SEARCH MENU',
+            `
+*╭─「 SEARCH COMMANDS 」*
+*│* ${config.PREFIX}imdb - Search movies/shows info
+*│* ${config.PREFIX}npm - Search NPM packages
+*│* ${config.PREFIX}gitstalk - Stalk GitHub profiles
+*│* ${config.PREFIX}news - Get latest news
+*│* ${config.PREFIX}cricket - Cricket scores & info
+╰──────────●●►`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
+
+case 'aimenu': {
+    await socket.sendMessage(from, { react: { text: '🤖', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '🤖 AI MENU',
+            `
+*╭─「 AI COMMANDS 」*
+*│* ${config.PREFIX}ai - AI chat assistant
+*│* ${config.PREFIX}aiimg - AI image generation
+*│* ${config.PREFIX}ask - Ask AI questions
+*│* ${config.PREFIX}logo - Create logos
+*│* ${config.PREFIX}fancy - Fancy text generator
+*│* ${config.PREFIX}scanqr - Scan QR codes
+╰──────────●●►`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
+
+case 'toolsmenu': {
+    await socket.sendMessage(from, { react: { text: '🛠️', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '🛠️ TOOLS MENU',
+            `
+*╭─「 UTILITY TOOLS 」*
+*│* ${config.PREFIX}tourl - Convert media to URL
+*│* ${config.PREFIX}screenshot - Take website screenshot
+*│* ${config.PREFIX}winfo - WhatsApp info checker
+*│* ${config.PREFIX}tinyurl - Create short URLs
+*│* ${config.PREFIX}sticker / ${config.PREFIX}s - Create stickers
+*│* ${config.PREFIX}take / ${config.PREFIX}rename - Rename sticker pack
+╰──────────●●►`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
+
+case 'ownermenu': {
+    await socket.sendMessage(from, { react: { text: '👑', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '👑 OWNER MENU',
+            `
+*╭─「 OWNER COMMANDS 」*
+*│* ${config.PREFIX}block - Block a user
+*│* ${config.PREFIX}unblock - Unblock a user
+*│* ${config.PREFIX}setsudo / ${config.PREFIX}addsudo - Add temp owner
+*│* ${config.PREFIX}delsudo / ${config.PREFIX}delowner - Remove temp owner
+*│* ${config.PREFIX}listsudo / ${config.PREFIX}listowner - List temp owners
+*│* ${config.PREFIX}ban - Ban user from bot
+*│* ${config.PREFIX}unban - Unban user
+*│* ${config.PREFIX}listban - List banned users
+*│* ${config.PREFIX}settings - Bot settings
+*│* ${config.PREFIX}restart - Restart bot
+*│* ${config.PREFIX}stats - Bot statistics
+*│* ${config.PREFIX}broadcast - Broadcast message
+╰──────────●●►`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
+
+case 'mainmenu': {
+    await socket.sendMessage(from, { react: { text: '🏠', key: msg.key } });
+    
+    await socket.sendMessage(from, {
+        image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
+        caption: formatMessage(
+            '🏠 MAIN MENU',
+            `
+*╭─「 ALL CATEGORIES 」*
+*│*📥 *Download:* song, tiktok, fb, ig, yt, apk
+*│*🔍 *Search:* imdb, npm, gitstalk, news, cricket
+*│*🤖 *AI:* ai, aiimg, ask, logo, fancy, scanqr
+*│*🛠️ *Tools:* tourl, screenshot, winfo, tinyurl, sticker
+*│*👥 *Group:* kick, add, promote, demote, mute, hidetag
+*│*👑 *Owner:* block, ban, sudo, settings, restart
+*│*⚡ *Other:* alive, menu, ping, deleteme
+╰──────────●●►
+
+*Use ${config.PREFIX}menu for category buttons*`,
+            '© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+        )
+    }, { quoted: msg });
+    break;
+}
        
                 case 'fc': {
                     if (args.length === 0) {
@@ -5774,7 +5961,7 @@ case 'remove': {
             text: "❌ I must be *admin* to remove someone."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
@@ -5825,7 +6012,7 @@ case 'add': {
             text: "❌ I need to be an admin to add members."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
@@ -5862,7 +6049,7 @@ case 'admin': {
             text: "❌ I must be *admin* to promote someone."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
@@ -5913,7 +6100,7 @@ case 'demote': {
             text: "❌ I must be *admin* to demote someone."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
@@ -5962,7 +6149,7 @@ case 'close': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
         
@@ -5992,7 +6179,7 @@ case 'open': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
         
@@ -6072,7 +6259,7 @@ case 'htag': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
 
@@ -6100,7 +6287,7 @@ case 'tagall': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
 
@@ -6156,7 +6343,7 @@ case 'glink': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
         
@@ -6185,7 +6372,7 @@ case 'resetlink': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
         
@@ -6263,7 +6450,7 @@ case 'setgroupname': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
         
@@ -6297,7 +6484,7 @@ case 'setgroupdesc': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
         
@@ -6330,7 +6517,7 @@ case 'opentime': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
         
@@ -6393,7 +6580,7 @@ case 'closetime': {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
         
-        if (!isAdmin && !isOwner) return await socket.sendMessage(sender, {
+        if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
         
