@@ -50,7 +50,19 @@ The Express server will start on port 5000 and connect to MongoDB.
 - **Reason**: WhatsApp bot needs to maintain persistent connections and state
 - **Run Command**: `npm start`
 
-## Recent Changes (November 5, 2025)
+## Recent Changes
+
+### November 6, 2025
+- **Added comprehensive group management commands**:
+  - Group admin commands: kick, add, promote, demote, kickall
+  - Group settings: mute/unmute, lock/unlock, open/close
+  - Group utilities: hidetag, tagall, leave, invite, revoke, ginfo
+  - Group configuration: updategname, updategdesc
+  - Scheduled actions: opentime, closetime
+- Verified all existing commands (sticker, block/unblock, sudo, ban) are working
+- Server running successfully with no errors
+
+### November 5, 2025
 - Configured for Replit environment
 - Updated server port from 7860 to 5000
 - Added .gitignore for Node.js project
@@ -70,8 +82,47 @@ The app uses MongoDB Atlas for session storage. The connection string is configu
 
 ## Bot Commands
 Commands use the prefix defined in config (default `.`):
+
+### General Commands
 - `.ping` / `.speed` / `.pong` - Check bot latency and status
-- Additional commands defined in `pair.js`
+- `.menu` - Display available commands
+
+### Group Management Commands
+- `.kick` / `.remove` - Remove a user from the group (reply or mention)
+- `.add` - Add a member to the group (provide number)
+- `.promote` / `.admin` - Promote a user to admin (reply or mention)
+- `.demote` - Demote an admin to normal member (reply or mention)
+- `.kickall` - Remove all members from group (owner only)
+
+### Group Settings
+- `.mute` / `.lock` / `.close` - Close group (only admins can send messages)
+- `.unmute` / `.unlock` / `.open` - Open group (everyone can send messages)
+- `.updategname` - Update group name
+- `.updategdesc` - Update group description
+- `.opentime <value> <unit>` - Schedule group opening (e.g., `.opentime 10 minute`)
+- `.closetime <value> <unit>` - Schedule group closing (e.g., `.closetime 5 hour`)
+
+### Group Utilities
+- `.hidetag` / `.htag` - Tag all members with hidden mention
+- `.tagall` - Tag all members with visible list
+- `.leave` / `.exit` - Make bot leave the group (owner only)
+- `.invite` / `.grouplink` / `.glink` - Get group invite link
+- `.revoke` / `.resetlink` - Reset group invite link
+- `.ginfo` / `.groupinfo` - Display detailed group information
+
+### Sticker Commands
+- `.sticker` / `.s` - Create sticker from image (reply to image)
+- `.take` / `.rename` - Rename sticker pack (reply to sticker)
+
+### Owner Commands
+- `.block` - Block a user (reply or mention in groups, or direct in PM)
+- `.unblock` - Unblock a user (reply to user)
+- `.setsudo` / `.addsudo` - Add temporary owner
+- `.delsudo` / `.delowner` - Remove temporary owner
+- `.listsudo` / `.listowner` - List all temporary owners
+- `.ban` - Ban user from using bot
+- `.unban` - Unban user
+- `.listban` - List all banned users
 
 ## Admin Configuration
 Admin phone numbers are stored in `admin.json` (JSON array format). Admins receive connection notifications when new numbers pair with the bot.
