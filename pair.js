@@ -555,15 +555,16 @@ END:VCARD`
         // Check if user is admin in group
         let isAdmins = false;
         let isBotAdmin = false;
+        let groupMetadata = null;
         if (isGroup) {
             try {
-                const groupMetadata = await socket.groupMetadata(from);
+                groupMetadata = await socket.groupMetadata(from);
                 const participants = groupMetadata.participants;
                 const botJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
                 
-                // Check if sender is admin
+                // Check if sender is admin - compare full JID
                 const senderObj = participants.find(p => p.id === nowsender);
-                isAdmins = senderObj?.admin === 'admin' || senderObj?.admin === 'superadmin';
+                isAdmins = senderObj?.admin === 'admin' || senderObj?.admin === 'superadmin' || isOwner;
                 
                 // Check if bot is admin
                 const botObj = participants.find(p => p.id === botJid);
@@ -588,7 +589,55 @@ END:VCARD`
             return trueFileName;
         }
 
+        // Handle prefix change
+        if (global.pendingPrefixChange && global.pendingPrefixChange.has(nowsender)) {
+            const prefixData = global.pendingPrefixChange.get(nowsender);
+            if (Date.now() - prefixData.timestamp < 60000) {
+                const newPrefix = body.trim();
+                if (newPrefix.length === 1 || newPrefix.length === 2) {
+                    const userConfig = await loadUserConfig(prefixData.number);
+                    userConfig.PREFIX = newPrefix;
+                    await updateUserConfig(prefixData.number, userConfig);
+                    await socket.sendMessage(sender, {
+                        text: `✅ *Prefix Changed*\n\nNew prefix: *${newPrefix}*\n\nExample: ${newPrefix}menu\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                    }, { quoted: msg });
+                    global.pendingPrefixChange.delete(nowsender);
+                    return;
+                } else {
+                    await socket.sendMessage(sender, {
+                        text: `❌ Invalid prefix. Must be 1-2 characters.\n\nTry again with ${prefix}settings`
+                    }, { quoted: msg });
+                    global.pendingPrefixChange.delete(nowsender);
+                    return;
+                }
+            } else {
+                global.pendingPrefixChange.delete(nowsender);
+            }
+        }
+
         if (!command) return;
+
+        // Check private mode and sudo access
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const botMode = userConfig.MODE || config.MODE;
+        
+        if (botMode === 'private' && !isOwner) {
+            // Check if user is sudo
+            let sudoUsers = [];
+            try {
+                sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+            } catch {}
+            
+            // Bot number is always owner
+            const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+            const isBotOwner = nowsender === botOwnerJid;
+            const isSudoUser = sudoUsers.includes(nowsender);
+            
+            if (!isBotOwner && !isSudoUser) {
+                // Silently ignore commands in private mode from non-sudo users
+                return;
+            }
+        }
 
         try {
             switch (command) {
@@ -5496,7 +5545,7 @@ case 'antical': {
                             updatedConfig.ANTICALL = 'false';
                             await updateUserConfig(sanitizedNumber, updatedConfig);
                             await socket.sendMessage(sender, {
-                                text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                                text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊�Federal𝘾 ッ"
                             }, { quoted: messageData });
                         }
                         else if (buttonId.startsWith(`anticall-status-${sessionId}`)) {
@@ -5539,6 +5588,196 @@ case 'antical': {
 
     } catch (error) {
         console.error('Anticall command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== SETTINGS COMMAND ====================
+case 'settings':
+case 'setting':
+case 'config': {
+    try {
+        // Bot number is always owner
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        
+        // Check if user is owner (config owner OR bot number itself OR sudo user)
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+        
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner or sudo users can access settings!*"
+            }, { quoted: msg });
+        }
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        const currentSettings = `⚙️ *BOT SETTINGS*\n\n` +
+                               `📌 *PREFIX:* ${userConfig.PREFIX || config.PREFIX}\n` +
+                               `🔐 *MODE:* ${(userConfig.MODE || config.MODE).toUpperCase()}\n` +
+                               `👁️ *AUTO VIEW STATUS:* ${(userConfig.AUTO_VIEW_STATUS || config.AUTO_VIEW_STATUS) === 'true' ? '✅' : '❌'}\n` +
+                               `❤️ *AUTO REACT STATUS:* ${(userConfig.AUTO_LIKE_STATUS || config.AUTO_LIKE_STATUS) === 'true' ? '✅' : '❌'}\n` +
+                               `📵 *ANTI-CALL:* ${(userConfig.ANTICALL || config.ANTICALL) === 'true' ? '✅' : '❌'}\n` +
+                               `🎙️ *AUTO RECORDING:* ${(userConfig.AUTO_RECORDING || config.AUTO_RECORDING) === 'true' ? '✅' : '❌'}\n\n` +
+                               `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`;
+
+        const buttonsMessage = {
+            image: { url: config.RCD_IMAGE_PATH },
+            caption: currentSettings,
+            footer: 'Select a setting to configure',
+            buttons: [
+                {
+                    buttonId: `settings-menu-${sessionId}`,
+                    buttonText: { displayText: '📋 All Settings' },
+                    type: 1
+                },
+                {
+                    buttonId: `settings-mode-${sessionId}`,
+                    buttonText: { displayText: '🔐 Toggle Mode' },
+                    type: 1
+                },
+                {
+                    buttonId: `settings-prefix-${sessionId}`,
+                    buttonText: { displayText: '📌 Change Prefix' },
+                    type: 1
+                }
+            ],
+            headerType: 1
+        };
+
+        const sentMsg = await socket.sendMessage(sender, buttonsMessage, { quoted: msg });
+
+        const buttonHandler = async (messageUpdate) => {
+            try {
+                const messageData = messageUpdate?.messages[0];
+                if (!messageData?.message?.buttonsResponseMessage) return;
+
+                const buttonId = messageData.message.buttonsResponseMessage.selectedButtonId;
+                const isReplyToBot = messageData.message.buttonsResponseMessage.contextInfo?.stanzaId === sentMsg.key.id;
+
+                if (isReplyToBot && buttonId.includes(sessionId)) {
+                    socket.ev.off('messages.upsert', buttonHandler);
+
+                    await socket.sendMessage(sender, { react: { text: '⏳', key: messageData.key } });
+
+                    const updatedConfig = await loadUserConfig(sanitizedNumber);
+
+                    if (buttonId.startsWith(`settings-menu-${sessionId}`)) {
+                        // Show all settings menu
+                        const allSettingsMsg = {
+                            image: { url: config.RCD_IMAGE_PATH },
+                            caption: currentSettings,
+                            footer: 'Configure individual settings',
+                            buttons: [
+                                {
+                                    buttonId: `setting-viewstatus-${sessionId}`,
+                                    buttonText: { displayText: '👁️ Auto View Status' },
+                                    type: 1
+                                },
+                                {
+                                    buttonId: `setting-reactstatus-${sessionId}`,
+                                    buttonText: { displayText: '❤️ Auto React Status' },
+                                    type: 1
+                                },
+                                {
+                                    buttonId: `setting-recording-${sessionId}`,
+                                    buttonText: { displayText: '🎙️ Auto Recording' },
+                                    type: 1
+                                }
+                            ],
+                            headerType: 1
+                        };
+                        await socket.sendMessage(sender, allSettingsMsg, { quoted: messageData });
+                        
+                        // Re-add listener for sub-settings
+                        socket.ev.on('messages.upsert', subSettingsHandler);
+                        setTimeout(() => socket.ev.off('messages.upsert', subSettingsHandler), 120000);
+                        
+                    } else if (buttonId.startsWith(`settings-mode-${sessionId}`)) {
+                        // Toggle mode
+                        const currentMode = updatedConfig.MODE || config.MODE;
+                        updatedConfig.MODE = currentMode === 'public' ? 'private' : 'public';
+                        await updateUserConfig(sanitizedNumber, updatedConfig);
+                        await socket.sendMessage(sender, {
+                            text: `🔐 *Mode Changed*\n\nBot is now in *${updatedConfig.MODE.toUpperCase()}* mode.\n\n${updatedConfig.MODE === 'private' ? '🔒 Only sudo users can use the bot.' : '🔓 Everyone can use the bot.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                        }, { quoted: messageData });
+                        
+                    } else if (buttonId.startsWith(`settings-prefix-${sessionId}`)) {
+                        // Change prefix - ask for input
+                        await socket.sendMessage(sender, {
+                            text: `📌 *Change Prefix*\n\nReply with your desired prefix.\n\n*Current:* ${updatedConfig.PREFIX || config.PREFIX}\n*Example:* ! or # or /\n\n_Reply within 60 seconds_`
+                        }, { quoted: messageData });
+                        
+                        // Store pending prefix change
+                        if (!global.pendingPrefixChange) global.pendingPrefixChange = new Map();
+                        global.pendingPrefixChange.set(nowsender, {
+                            number: sanitizedNumber,
+                            timestamp: Date.now()
+                        });
+                    }
+
+                    await socket.sendMessage(sender, { react: { text: '✅', key: messageData.key } });
+                }
+            } catch (error) {
+                console.error('Settings button handler error:', error);
+            }
+        };
+
+        // Sub-settings handler
+        const subSettingsHandler = async (messageUpdate) => {
+            try {
+                const messageData = messageUpdate?.messages[0];
+                if (!messageData?.message?.buttonsResponseMessage) return;
+
+                const buttonId = messageData.message.buttonsResponseMessage.selectedButtonId;
+
+                if (buttonId.includes(sessionId)) {
+                    socket.ev.off('messages.upsert', subSettingsHandler);
+
+                    await socket.sendMessage(sender, { react: { text: '⏳', key: messageData.key } });
+
+                    const updatedConfig = await loadUserConfig(sanitizedNumber);
+
+                    if (buttonId.startsWith(`setting-viewstatus-${sessionId}`)) {
+                        updatedConfig.AUTO_VIEW_STATUS = updatedConfig.AUTO_VIEW_STATUS === 'true' ? 'false' : 'true';
+                        await updateUserConfig(sanitizedNumber, updatedConfig);
+                        await socket.sendMessage(sender, {
+                            text: `👁️ *Auto View Status ${updatedConfig.AUTO_VIEW_STATUS === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                        }, { quoted: messageData });
+                    } else if (buttonId.startsWith(`setting-reactstatus-${sessionId}`)) {
+                        updatedConfig.AUTO_LIKE_STATUS = updatedConfig.AUTO_LIKE_STATUS === 'true' ? 'false' : 'true';
+                        await updateUserConfig(sanitizedNumber, updatedConfig);
+                        await socket.sendMessage(sender, {
+                            text: `❤️ *Auto React Status ${updatedConfig.AUTO_LIKE_STATUS === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                        }, { quoted: messageData });
+                    } else if (buttonId.startsWith(`setting-recording-${sessionId}`)) {
+                        updatedConfig.AUTO_RECORDING = updatedConfig.AUTO_RECORDING === 'true' ? 'false' : 'true';
+                        await updateUserConfig(sanitizedNumber, updatedConfig);
+                        await socket.sendMessage(sender, {
+                            text: `🎙️ *Auto Recording ${updatedConfig.AUTO_RECORDING === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                        }, { quoted: messageData });
+                    }
+
+                    await socket.sendMessage(sender, { react: { text: '✅', key: messageData.key } });
+                }
+            } catch (error) {
+                console.error('Sub-settings handler error:', error);
+            }
+        };
+
+        socket.ev.on('messages.upsert', buttonHandler);
+        setTimeout(() => socket.ev.off('messages.upsert', buttonHandler), 120000);
+
+    } catch (error) {
+        console.error('Settings command error:', error);
         await socket.sendMessage(sender, {
             text: `❌ Error: ${error.message}`
         }, { quoted: msg });
@@ -6174,7 +6413,7 @@ case 'close': {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
         
-        if (!isBotAdmin) return await socket.sendMessage(sender, {
+        if (!isBotAdmin && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to mute the group."
         }, { quoted: msg });
 
@@ -6204,7 +6443,7 @@ case 'open': {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
         
-        if (!isBotAdmin) return await socket.sendMessage(sender, {
+        if (!isBotAdmin && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to unmute the group."
         }, { quoted: msg });
 

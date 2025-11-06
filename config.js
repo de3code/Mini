@@ -13,13 +13,14 @@ module.exports = {
   // MongoDB configuration for storing sessions
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://darexmucheri:cMd7EoTwGglJGXwR@cluster0.uwf6z.mongodb.net/mini2?retryWrites=true&w=majority&appName=Cluster0',
   
-  // Bot behavior
+  // Bot behavior (these are defaults, can be overridden per-user in DB)
   AUTO_VIEW_STATUS: process.env.AUTO_VIEW_STATUS || 'true',
   AUTO_LIKE_STATUS: process.env.AUTO_LIKE_STATUS || 'true',
   AUTO_RECORDING: process.env.AUTO_RECORDING || 'false',
   ANTICALL: process.env.ANTICALL || 'false',
   AUTO_LIKE_EMOJI: parseList(process.env.AUTO_LIKE_EMOJI, ['💋', '🍬', '🫆', '💗', '🎈', '🎉', '🥳', '❤️', '🧫', '🐭']),
   PREFIX: process.env.PREFIX || '.',
+  MODE: process.env.MODE || 'public', // public or private
   MAX_RETRIES: parseInt(process.env.MAX_RETRIES || '3', 10),
 
   // Paths
