@@ -545,7 +545,10 @@ END:VCARD`
         const botNumber = socket.user.id.split(':')[0];
         const isbot = botNumber.includes(senderNumber);
         const isOwner = isbot ? isbot : developers.includes(senderNumber);
-        var prefix = config.PREFIX;
+        
+        // Load user-configured prefix dynamically
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        var prefix = userConfig.PREFIX || config.PREFIX;
         var isCmd = (body || '').startsWith(prefix);
         const from = msg.key.remoteJid;
         const isGroup = from.endsWith("@g.us");
@@ -617,8 +620,7 @@ END:VCARD`
 
         if (!command) return;
 
-        // Check private mode and sudo access
-        const userConfig = await loadUserConfig(sanitizedNumber);
+        // Check private mode and sudo access (userConfig already loaded above for prefix)
         const botMode = userConfig.MODE || config.MODE;
         
         if (botMode === 'private' && !isOwner) {
@@ -5595,6 +5597,219 @@ case 'antical': {
     break;
 }
 
+// ==================== MODE COMMAND ====================
+case 'mode': {
+    try {
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+        
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner or sudo users can change mode!*"
+            }, { quoted: msg });
+        }
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const newMode = args[0]?.toLowerCase();
+        
+        if (!newMode || !['public', 'private'].includes(newMode)) {
+            return await socket.sendMessage(sender, {
+                text: `🔐 *Current Mode:* ${(userConfig.MODE || config.MODE).toUpperCase()}\n\n*Usage:* .mode public OR .mode private\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            }, { quoted: msg });
+        }
+
+        userConfig.MODE = newMode;
+        await updateUserConfig(sanitizedNumber, userConfig);
+        await socket.sendMessage(sender, {
+            text: `🔐 *Mode Changed to ${newMode.toUpperCase()}*\n\n${newMode === 'private' ? '🔒 Only sudo users can use the bot.' : '🔓 Everyone can use the bot.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+        }, { quoted: msg });
+    } catch (error) {
+        console.error('Mode command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== SET PREFIX COMMAND ====================
+case 'setprefix':
+case 'prefix': {
+    try {
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+        
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner or sudo users can change prefix!*"
+            }, { quoted: msg });
+        }
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const newPrefix = args[0];
+        
+        if (!newPrefix) {
+            return await socket.sendMessage(sender, {
+                text: `📌 *Current Prefix:* ${userConfig.PREFIX || config.PREFIX}\n\n*Usage:* .setprefix ! \n*Examples:* .setprefix # OR .setprefix / \n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            }, { quoted: msg });
+        }
+
+        if (newPrefix.length > 3) {
+            return await socket.sendMessage(sender, {
+                text: "❌ Prefix must be 1-3 characters only!"
+            }, { quoted: msg });
+        }
+
+        userConfig.PREFIX = newPrefix;
+        await updateUserConfig(sanitizedNumber, userConfig);
+        await socket.sendMessage(sender, {
+            text: `📌 *Prefix Changed to:* ${newPrefix}\n\nAll commands now use this prefix.\n*Example:* ${newPrefix}menu\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+        }, { quoted: msg });
+    } catch (error) {
+        console.error('Setprefix command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== SET AUTO RECORDING COMMAND ====================
+case 'setautorecording':
+case 'autorecording': {
+    try {
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+        
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner or sudo users can change this setting!*"
+            }, { quoted: msg });
+        }
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const option = args[0]?.toLowerCase();
+        
+        if (!option || !['on', 'off', 'true', 'false'].includes(option)) {
+            return await socket.sendMessage(sender, {
+                text: `🎙️ *Auto Recording:* ${(userConfig.AUTO_RECORDING || config.AUTO_RECORDING) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .setautorecording on OR .setautorecording off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            }, { quoted: msg });
+        }
+
+        const enabled = (option === 'on' || option === 'true');
+        userConfig.AUTO_RECORDING = enabled ? 'true' : 'false';
+        await updateUserConfig(sanitizedNumber, userConfig);
+        await socket.sendMessage(sender, {
+            text: `🎙️ *Auto Recording ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will show recording status when processing commands.' : 'Recording status disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+        }, { quoted: msg });
+    } catch (error) {
+        console.error('Auto recording command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== AUTO VIEW STATUS COMMAND ====================
+case 'autoviewstatus':
+case 'viewstatus': {
+    try {
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+        
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner or sudo users can change this setting!*"
+            }, { quoted: msg });
+        }
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const option = args[0]?.toLowerCase();
+        
+        if (!option || !['on', 'off', 'true', 'false'].includes(option)) {
+            return await socket.sendMessage(sender, {
+                text: `👁️ *Auto View Status:* ${(userConfig.AUTO_VIEW_STATUS || config.AUTO_VIEW_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .autoviewstatus on OR .autoviewstatus off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            }, { quoted: msg });
+        }
+
+        const enabled = (option === 'on' || option === 'true');
+        userConfig.AUTO_VIEW_STATUS = enabled ? 'true' : 'false';
+        await updateUserConfig(sanitizedNumber, userConfig);
+        await socket.sendMessage(sender, {
+            text: `👁️ *Auto View Status ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will automatically view all status updates.' : 'Auto view disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+        }, { quoted: msg });
+    } catch (error) {
+        console.error('Auto view status command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== AUTO REACT STATUS COMMAND ====================
+case 'autoreactstatus':
+case 'reactstatus': {
+    try {
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+        
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner or sudo users can change this setting!*"
+            }, { quoted: msg });
+        }
+
+        const userConfig = await loadUserConfig(sanitizedNumber);
+        const option = args[0]?.toLowerCase();
+        
+        if (!option || !['on', 'off', 'true', 'false'].includes(option)) {
+            return await socket.sendMessage(sender, {
+                text: `❤️ *Auto React Status:* ${(userConfig.AUTO_LIKE_STATUS || config.AUTO_LIKE_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .autoreactstatus on OR .autoreactstatus off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            }, { quoted: msg });
+        }
+
+        const enabled = (option === 'on' || option === 'true');
+        userConfig.AUTO_LIKE_STATUS = enabled ? 'true' : 'false';
+        await updateUserConfig(sanitizedNumber, userConfig);
+        await socket.sendMessage(sender, {
+            text: `❤️ *Auto React Status ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will automatically react to all status updates.' : 'Auto react disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙖𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+        }, { quoted: msg });
+    } catch (error) {
+        console.error('Auto react status command error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
 // ==================== SETTINGS COMMAND ====================
 case 'settings':
 case 'setting':
@@ -6204,6 +6419,248 @@ case 'bannedusers': {
     } catch (err) {
         console.error(err);
         await socket.sendMessage(sender, { text: "❌ Error: " + err.message }, { quoted: msg });
+    }
+    break;
+}
+
+// ==================== UTILITY COMMANDS ====================
+
+// Channel Info Command
+case 'cid':
+case 'newsletter':
+case 'channelid':
+case 'channelinfo': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
+        
+        if (!q) return await socket.sendMessage(sender, {
+            text: "❎ Please provide a WhatsApp Channel link.\n\n*Example:* .cid https://whatsapp.com/channel/123456789"
+        }, { quoted: msg });
+
+        const match = q.match(/whatsapp\.com\/channel\/([\w-]+)/);
+        if (!match) return await socket.sendMessage(sender, {
+            text: "⚠️ *Invalid channel link format.*\n\nMake sure it looks like:\nhttps://whatsapp.com/channel/xxxxxxxxx"
+        }, { quoted: msg });
+
+        const inviteId = match[1];
+        let metadata;
+        
+        try {
+            metadata = await socket.newsletterMetadata("invite", inviteId);
+        } catch (e) {
+            return await socket.sendMessage(sender, {
+                text: "❌ Failed to fetch channel metadata. Make sure the link is correct."
+            }, { quoted: msg });
+        }
+
+        if (!metadata || !metadata.id) return await socket.sendMessage(sender, {
+            text: "❌ Channel not found or inaccessible."
+        }, { quoted: msg });
+
+        const infoText = `\`📡 Channel Info\`\n\n` +
+            `🛠️ *ID:* ${metadata.id}\n` +
+            `📌 *Name:* ${metadata.name}\n` +
+            `👥 *Followers:* ${metadata.subscribers?.toLocaleString() || "N/A"}\n` +
+            `📅 *Created on:* ${metadata.creation_time ? new Date(metadata.creation_time * 1000).toLocaleString() : "Unknown"}\n\n` +
+            `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`;
+
+        if (metadata.preview) {
+            await socket.sendMessage(sender, {
+                image: { url: `https://pps.whatsapp.net${metadata.preview}` },
+                caption: infoText
+            }, { quoted: msg });
+        } else {
+            await socket.sendMessage(sender, {
+                text: infoText
+            }, { quoted: msg });
+        }
+        
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (error) {
+        console.error("❌ Error in .cid command:", error);
+        await socket.sendMessage(sender, {
+            text: "⚠️ An unexpected error occurred."
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// YouTube Search Command
+case 'yts':
+case 'ytsearch': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } });
+        
+        if (!q) return await socket.sendMessage(sender, {
+            text: '*Please give me words to search*\n\n*Example:* .yts SUBZERO-MD'
+        }, { quoted: msg });
+
+        try {
+            const yts = require("yt-search");
+            const arama = await yts(q);
+            
+            let mesaj = '🎥 *YOUTUBE SEARCH RESULTS*\n\n';
+            arama.all.slice(0, 10).map((video, index) => {
+                mesaj += `${index + 1}. *${video.title}*\n🔗 ${video.url}\n\n`;
+            });
+            mesaj += '> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ';
+            
+            await socket.sendMessage(sender, { text: mesaj }, { quoted: msg });
+            await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+        } catch (e) {
+            console.error(e);
+            return await socket.sendMessage(sender, { text: '*Error occurred while searching!*' }, { quoted: msg });
+        }
+    } catch (e) {
+        console.error(e);
+        await socket.sendMessage(sender, { text: '*Error !!*' }, { quoted: msg });
+    }
+    break;
+}
+
+// Remini Image Enhancement Command
+case 'remini':
+case 'enhance':
+case 'hq':
+case 'qualityup': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '✨', key: msg.key } });
+        
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quotedMsg || (!quotedMsg.imageMessage && !quotedMsg.stickerMessage)) {
+            return await socket.sendMessage(sender, {
+                text: "Please reply to an image file (JPEG/PNG)"
+            }, { quoted: msg });
+        }
+
+        const mimeType = quotedMsg.imageMessage ? 'image' : 'sticker';
+        const mediaMessage = quotedMsg[mimeType + 'Message'];
+        
+        await socket.sendMessage(sender, {
+            text: "🔄 Enhancing image quality... Please wait."
+        }, { quoted: msg });
+
+        const stream = await downloadContentFromMessage(mediaMessage, mimeType === 'sticker' ? 'image' : mimeType);
+        const chunks = [];
+        for await (const chunk of stream) {
+            chunks.push(chunk);
+        }
+        const mediaBuffer = Buffer.concat(chunks);
+
+        const tempFilePath = path.join(os.tmpdir(), `remini_input_${Date.now()}.jpg`);
+        fs.writeFileSync(tempFilePath, mediaBuffer);
+
+        const FormData = require('form-data');
+        const form = new FormData();
+        form.append('fileToUpload', fs.createReadStream(tempFilePath), 'image.jpg');
+        form.append('reqtype', 'fileupload');
+
+        const uploadResponse = await axios.post("https://catbox.moe/user/api.php", form, {
+            headers: form.getHeaders()
+        });
+
+        const imageUrl = uploadResponse.data;
+        fs.unlinkSync(tempFilePath);
+
+        if (!imageUrl) throw new Error("Failed to upload image to Catbox");
+
+        const apiUrl = `https://apis.davidcyriltech.my.id/remini?url=${encodeURIComponent(imageUrl)}`;
+        const response = await axios.get(apiUrl, { 
+            responseType: 'arraybuffer',
+            timeout: 60000
+        });
+
+        if (!response.data || response.data.length < 100) {
+            throw new Error("API returned invalid image data");
+        }
+
+        const outputPath = path.join(os.tmpdir(), `remini_output_${Date.now()}.jpg`);
+        fs.writeFileSync(outputPath, response.data);
+
+        await socket.sendMessage(sender, {
+            image: fs.readFileSync(outputPath),
+            caption: "✅ Image enhanced successfully!\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+        }, { quoted: msg });
+
+        fs.unlinkSync(outputPath);
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (error) {
+        console.error('Remini Error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message || "Failed to enhance image. The image might be too large or the API is unavailable."}`
+        }, { quoted: msg });
+    }
+    break;
+}
+
+// Remove Background Command
+case 'removebg':
+case 'rmbg':
+case 'nobg':
+case 'transparentbg': {
+    try {
+        await socket.sendMessage(sender, { react: { text: '🖼️', key: msg.key } });
+        
+        const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        if (!quotedMsg || (!quotedMsg.imageMessage && !quotedMsg.stickerMessage)) {
+            return await socket.sendMessage(sender, {
+                text: "Please reply to an image file (JPEG/PNG)"
+            }, { quoted: msg });
+        }
+
+        const mimeType = quotedMsg.imageMessage ? 'image' : 'sticker';
+        const mediaMessage = quotedMsg[mimeType + 'Message'];
+        
+        await socket.sendMessage(sender, {
+            text: "🔄 Removing background... Please wait."
+        }, { quoted: msg });
+
+        const stream = await downloadContentFromMessage(mediaMessage, mimeType === 'sticker' ? 'image' : mimeType);
+        const chunks = [];
+        for await (const chunk of stream) {
+            chunks.push(chunk);
+        }
+        const mediaBuffer = Buffer.concat(chunks);
+
+        const tempFilePath = path.join(os.tmpdir(), `removebg_${Date.now()}.jpg`);
+        fs.writeFileSync(tempFilePath, mediaBuffer);
+
+        const FormData = require('form-data');
+        const form = new FormData();
+        form.append('fileToUpload', fs.createReadStream(tempFilePath), 'image.jpg');
+        form.append('reqtype', 'fileupload');
+
+        const uploadResponse = await axios.post("https://catbox.moe/user/api.php", form, {
+            headers: form.getHeaders()
+        });
+
+        const imageUrl = uploadResponse.data;
+        fs.unlinkSync(tempFilePath);
+
+        if (!imageUrl) throw new Error("Failed to upload image to Catbox");
+
+        const apiUrl = `https://apis.davidcyriltech.my.id/removebg?url=${encodeURIComponent(imageUrl)}`;
+        const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+
+        if (!response.data || response.data.length < 100) {
+            throw new Error("API returned invalid image data");
+        }
+
+        const outputPath = path.join(os.tmpdir(), `removebg_output_${Date.now()}.png`);
+        fs.writeFileSync(outputPath, response.data);
+
+        await socket.sendMessage(sender, {
+            image: fs.readFileSync(outputPath),
+            caption: "✅ Background removed successfully!\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+        }, { quoted: msg });
+
+        fs.unlinkSync(outputPath);
+        await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
+    } catch (error) {
+        console.error('RemoveBG Error:', error);
+        await socket.sendMessage(sender, {
+            text: `❌ Error: ${error.message || "Failed to remove background."}`
+        }, { quoted: msg });
     }
     break;
 }
@@ -7152,12 +7609,76 @@ async function EmpirePair(number, res) {
 
                     activeSockets.set(sanitizedNumber, socket);
 
+                    // Send professional connection message
                     await socket.sendMessage(userJid, {
                         image: { url: config.RCD_IMAGE_PATH },
                         caption: formatMessage(
-                           '𝐒𝐔𝐁𝐙𝐄𝐑𝐎 𝐌𝐈𝐍𝐈 𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐄𝐃 🔗 ',
-                           `✅ Successfully connected!\n➢ 🔮Number: ${sanitizedNumber}\n\n➢ 📨 Support Channel: ${config.CHANNEL_LINK}`,
-                           '> © 𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ❤️'
+                           '🎉 𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐒𝐔𝐁𝐙𝐄𝐑𝐎 𝐌𝐈𝐍𝐈 🎉',
+                           `╭────────────────────╮
+│ ✅ *CONNECTION SUCCESSFUL!*
+│
+│ 📱 *Number:* ${sanitizedNumber}
+│ 🤖 *Bot Status:* Active & Ready
+│ 📡 *Channel:* Subscribed ✓
+│ 🔮 *Version:* v1.0.0
+│
+│ 📚 Type ${config.PREFIX}menu to explore
+│ ⚙️ Type ${config.PREFIX}settings to configure
+│
+╰────────────────────╯
+> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
+                           `📨 Support: ${config.CHANNEL_LINK}`
+                        )
+                    });
+
+                    // Load user config for settings display
+                    const userConfig = await loadUserConfig(sanitizedNumber);
+
+                    // Send settings guide as follow-up message
+                    await socket.sendMessage(userJid, {
+                        image: { url: config.RCD_IMAGE_PATH },
+                        caption: formatMessage(
+                           '⚙️ 𝐁𝐎𝐓 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒 & 𝐂𝐎𝐍𝐅𝐈𝐆𝐔𝐑𝐀𝐓𝐈𝐎𝐍',
+                           `╭─「 CURRENT SETTINGS 」
+│ 
+│ 📌 *Prefix:* ${userConfig.PREFIX || config.PREFIX}
+│ 🔐 *Mode:* ${(userConfig.MODE || config.MODE).toUpperCase()}
+│ 👁️ *Auto View Status:* ${(userConfig.AUTO_VIEW_STATUS || config.AUTO_VIEW_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}
+│ ❤️ *Auto React Status:* ${(userConfig.AUTO_LIKE_STATUS || config.AUTO_LIKE_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}
+│ 📵 *Anti-Call:* ${(userConfig.ANTICALL || config.ANTICALL) === 'true' ? '✅ ON' : '❌ OFF'}
+│ 🎙️ *Auto Recording:* ${(userConfig.AUTO_RECORDING || config.AUTO_RECORDING) === 'true' ? '✅ ON' : '❌ OFF'}
+│
+╰──────────────────────
+
+╭─「 QUICK SETUP GUIDE 」
+│
+│ *Change Settings Instantly:*
+│ 
+│ 🔐 ${config.PREFIX}mode public
+│ 🔐 ${config.PREFIX}mode private
+│ 
+│ 📌 ${config.PREFIX}setprefix !
+│ 📌 ${config.PREFIX}setprefix #
+│ 
+│ 🎙️ ${config.PREFIX}setautorecording on
+│ 🎙️ ${config.PREFIX}setautorecording off
+│ 
+│ 👁️ ${config.PREFIX}autoviewstatus on
+│ 👁️ ${config.PREFIX}autoviewstatus off
+│ 
+│ ❤️ ${config.PREFIX}autoreactstatus on
+│ ❤️ ${config.PREFIX}autoreactstatus off
+│ 
+│ 📵 ${config.PREFIX}anticall on
+│ 📵 ${config.PREFIX}anticall off
+│
+│ ⚙️ ${config.PREFIX}settings - Interactive Menu
+│
+╰──────────────────────
+
+💡 *TIP:* Changes take effect immediately!
+🔄 *Note:* All settings are saved automatically`,
+                           '> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
                         )
                     });
 
