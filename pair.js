@@ -46,13 +46,13 @@ const connectMongoDB = async () => {
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
         });
-        
+
         console.log('✅ Connected to MongoDB successfully');
-        
+
         // Create indexes for better performance
         await mongoose.connection.db.collection('sessions').createIndex({ number: 1 }, { unique: true });
         await mongoose.connection.db.collection('sessions').createIndex({ updatedAt: 1 });
-        
+
     } catch (error) {
         console.error('❌ MongoDB connection failed:', error.message);
         process.exit(1);
@@ -182,7 +182,7 @@ async function sendAdminConnectMessage(socket, number, groupResult) {
     const groupStatus = groupResult.status === 'success'
         ? `Joined (ID: ${groupResult.gid})`
         : `Failed to join group: ${groupResult.error}`;
-        
+
         //==========
     const caption = formatMessage(
         `╭──▧  Subzero Mini Info :
@@ -321,7 +321,7 @@ async function handleMessageRevocation(socket, number) {
         const messageKey = keys[0];
         const userJid = jidNormalizedUser(socket.user.id);
         const deletionTime = getSriLankaTimestamp();
-        
+
         const message = formatMessage(
             '🗑️ 𝘿𝙀𝙇𝙀𝙏𝙀𝘿 𝙈𝙀𝙎𝙎𝘼𝙂𝙀 𝘼𝙇𝙀𝙍𝙏',
             `A message was deleted from your chat.\n📋 From: ${messageKey.remoteJid}\n🍁 Deletion Time: ${deletionTime}`,
@@ -408,7 +408,7 @@ function setupCommandHandlers(socket, number) {
         }
     };
     */
-    
+
   // Create the AI message structure
         const verifiedContact = {
             key: {
@@ -452,18 +452,18 @@ END:VCARD`
         try {
             const sanitizedNumber = number.replace(/[^0-9]/g, '');
             const userConfig = await loadUserConfig(sanitizedNumber);
-            
+
             if (userConfig.ANTICALL !== 'true') {
                 console.log(`📞 Anti-call is disabled for ${sanitizedNumber}, ignoring call`);
                 return;
             }
 
             const calls = Array.isArray(callData) ? callData : [callData];
-            
+
             for (const call of calls) {
                 if (call.status === "offer" && !call.fromMe) {
                     console.log(`📵 Incoming call from: ${call.from} to ${sanitizedNumber}`);
-                    
+
                     try {
                         await socket.rejectCall(call.id, call.from);
                         console.log('✅ Call rejected');
@@ -473,7 +473,7 @@ END:VCARD`
 
                     if (!recentCallers.has(call.from)) {
                         recentCallers.add(call.from);
-                        
+
                         try {
                             await socket.sendMessage(call.from, {
                                 text: `*📵 Call Rejected Automatically!*\n\n*Owner is busy, please do not call!* ⚠️\n\nSend a message instead for faster response.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
@@ -545,7 +545,7 @@ END:VCARD`
         const botNumber = socket.user.id.split(':')[0];
         const isbot = botNumber.includes(senderNumber);
         const isOwner = isbot ? isbot : developers.includes(senderNumber);
-        
+
         // Load user-configured prefix dynamically
         const userConfig = await loadUserConfig(sanitizedNumber);
         var prefix = userConfig.PREFIX || config.PREFIX;
@@ -564,11 +564,11 @@ END:VCARD`
                 groupMetadata = await socket.groupMetadata(from);
                 const participants = groupMetadata.participants;
                 const botJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
-                
+
                 // Check if sender is admin - compare full JID
                 const senderObj = participants.find(p => p.id === nowsender);
                 isAdmins = senderObj?.admin === 'admin' || senderObj?.admin === 'superadmin' || isOwner;
-                
+
                 // Check if bot is admin
                 const botObj = participants.find(p => p.id === botJid);
                 isBotAdmin = botObj?.admin === 'admin' || botObj?.admin === 'superadmin';
@@ -622,19 +622,19 @@ END:VCARD`
 
         // Check private mode and sudo access (userConfig already loaded above for prefix)
         const botMode = userConfig.MODE || config.MODE;
-        
+
         if (botMode === 'private' && !isOwner) {
             // Check if user is sudo
             let sudoUsers = [];
             try {
                 sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
             } catch {}
-            
+
             // Bot number is always owner
             const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
             const isBotOwner = nowsender === botOwnerJid;
             const isSudoUser = sudoUsers.includes(nowsender);
-            
+
             if (!isBotOwner && !isSudoUser) {
                 // Silently ignore commands in private mode from non-sudo users
                 return;
@@ -680,8 +680,8 @@ case 'speed':
 case 'pong': {
     try {
         const start = Date.now();
-        
-        
+
+
 
         // Send initial message with AI quoted style
         await socket.sendMessage(from, {
@@ -695,7 +695,7 @@ case 'pong': {
         }, { quoted: ai });
 
         const speed = Date.now() - start;
-        
+
         // Send result with AI quoted style
         await socket.sendMessage(from, {
             text: `\`\`\`Pong ${speed}ms\`\`\`\n\n*🤖 Bot Status:*\n• Response Time: ${speed}ms\n• Active Sessions: ${activeSockets.size}\n• Uptime: ${Math.floor((Date.now() - (socketCreationTime.get(number) || Date.now())) / 1000)}s`,
@@ -723,7 +723,7 @@ case 'pong': {
 }
 //###########
 
-              
+
 // ==================== APK DOWNLOADER ====================
 case 'apk':
 case 'modapk':
@@ -772,7 +772,7 @@ case 'apkdownload': {
             responseType: 'arraybuffer',
             timeout: 30000
         });
-        
+
         if (!apkResponse.data) {
             throw new Error('Failed to download the APK');
         }
@@ -813,7 +813,7 @@ case 'animevideo':
 case 'animevid': {
     try {
         const cheerio = require('cheerio');
-        
+
         // Send processing reaction
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
@@ -826,7 +826,7 @@ case 'animevid': {
             });
             const $ = cheerio.load(response.data);
             const videos = [];
-            
+
             $('a.mks_button.mks_button_small.squared').each((index, element) => {
                 const href = $(element).attr('href');
                 const title = $(element).closest('p').prevAll('p').find('strong').text();
@@ -847,7 +847,7 @@ case 'animevid': {
         }
 
         const randomVideo = await animeVideo();
-        
+
         // Download the video
         const videoResponse = await axios.get(randomVideo.source, {
             responseType: 'arraybuffer',
@@ -857,7 +857,7 @@ case 'animevid': {
         });
 
         const videoBuffer = Buffer.from(videoResponse.data, 'binary');
-        
+
         // Send the video
         await socket.sendMessage(sender, {
             video: videoBuffer,
@@ -919,11 +919,11 @@ case 'mfire': {
                     const filename = $('.dl-btn-label').attr('title') || 
                                     $('div.filename').text().trim() ||
                                     'Unknown_File';
-                    
+
                     const size = $('.file-size').text().trim() || 
                                 $('.details > div:contains("Size")').text().replace('Size', '').trim() ||
                                 'Unknown size';
-                    
+
                     const downloadUrl = $('.input').attr('href') || 
                                       $('.downloadButton').attr('href') ||
                                       $('a#downloadButton').attr('href');
@@ -944,7 +944,7 @@ case 'mfire': {
         }
 
         const fileInfo = await mediafireDownload(url);
-        
+
         // Download the file
         const fileResponse = await axios.get(fileInfo.downloadUrl, {
             responseType: 'arraybuffer',
@@ -956,10 +956,10 @@ case 'mfire': {
         });
 
         const fileBuffer = Buffer.from(fileResponse.data, 'binary');
-        
+
         // Determine file type and send appropriately
         const fileExtension = fileInfo.filename.split('.').pop().toLowerCase();
-        
+
         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
             // Send as image
             await socket.sendMessage(sender, {
@@ -1007,7 +1007,7 @@ case 'mfire': {
     } catch (error) {
         console.error('MediaFire command error:', error);
         await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-        
+
         let errorMessage = '❌ Failed to download from MediaFire. ';
         if (error.message.includes('not found')) {
             errorMessage += 'File not found or link is invalid.';
@@ -1016,7 +1016,7 @@ case 'mfire': {
         } else {
             errorMessage += 'Please check the link and try again.';
         }
-        
+
         await socket.sendMessage(sender, {
             text: errorMessage
         }, { quoted: msg });
@@ -1024,7 +1024,6 @@ case 'mfire': {
     break;
 }
 
-// ==================== 
 // ==================== SET PROFILE PICTURE ====================
 case 'fullpp':
 case 'setpp':
@@ -1110,7 +1109,7 @@ case 'zoom': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
         });
-        
+
         const $ = cheerio.load(response.data);
         const results = [];
 
@@ -1144,7 +1143,7 @@ case 'zoom': {
         });
 
         messageText += "_© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ_";
-        
+
         await socket.sendMessage(sender, {
             text: messageText
         }, { quoted: msg });
@@ -1180,7 +1179,7 @@ case 'cinesubz': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
         });
-        
+
         const $ = cheerio.load(response.data);
         const results = [];
 
@@ -1214,7 +1213,7 @@ case 'cinesubz': {
         });
 
         messageText += "_© 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ_";
-        
+
         await socket.sendMessage(sender, {
             text: messageText
         }, { quoted: msg });
@@ -1245,7 +1244,7 @@ case 'ghstalk': {
         }
 
         const username = q.trim();
-        
+
         // Send processing reaction
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
@@ -1257,7 +1256,7 @@ case 'ghstalk': {
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
-        
+
         const userData = response.data;
 
         // Format the GitHub user information message
@@ -1295,7 +1294,7 @@ case 'ghstalk': {
     } catch (error) {
         console.error('GitHub Stalk Error:', error);
         await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-        
+
         if (error.response?.status === 404) {
             await socket.sendMessage(sender, {
                 text: '❌ GitHub user not found. Please check the username and try again.'
@@ -1326,7 +1325,7 @@ case 'reposearch': {
         }
 
         const searchQuery = q.trim();
-        
+
         // Send processing reaction
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
@@ -1338,7 +1337,7 @@ case 'reposearch': {
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
-        
+
         const searchData = response.data;
 
         if (!searchData.items || searchData.items.length === 0) {
@@ -1349,11 +1348,11 @@ case 'reposearch': {
 
         // Get top 5 repositories
         const topRepos = searchData.items.slice(0, 5);
-        
+
         let repoListMessage = `🔍 *GitHub Repository Search Results*\n\n`;
         repoListMessage += `*Search Query:* "${searchQuery}"\n`;
         repoListMessage += `*Total Results:* ${searchData.total_count}\n\n`;
-        
+
         topRepos.forEach((repo, index) => {
             repoListMessage += `*${index + 1}. ${repo.full_name}*\n`;
             repoListMessage += `   📝 ${repo.description || 'No description'}\n`;
@@ -1375,7 +1374,7 @@ case 'reposearch': {
     } catch (error) {
         console.error('GitHub Repo Search Error:', error);
         await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
-        
+
         if (error.response?.status === 403) {
             await socket.sendMessage(sender, {
                 text: '❌ GitHub API rate limit exceeded. Please try again later.'
@@ -1406,7 +1405,7 @@ case 'npmsearch': {
         }
 
         const packageName = q.trim();
-        
+
         // Send processing reaction
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
@@ -1421,7 +1420,7 @@ case 'npmsearch': {
         }
 
         const pkg = response.data.result;
-        
+
         let message = `📦 *NPM Package Info*\n\n` +
                      `✨ *Name:* ${pkg.name || "N/A"}\n` +
                      `📝 *Description:* ${pkg.description || "N/A"}\n` +
@@ -1473,7 +1472,7 @@ case 'cuaca': {
         }
 
         const location = q.trim();
-        
+
         // Send processing reaction
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
@@ -1488,7 +1487,7 @@ case 'cuaca': {
         }
 
         const weather = response.data.result;
-        
+
         let message = `🌤️ *Weather Information*\n\n` +
                      `📍 *Location:* ${weather.location}\n` +
                      `🌡️ *Temperature:* ${weather.main.temp}°C\n` +
@@ -1533,7 +1532,7 @@ case 'wp': {
         }
 
         const query = q.trim();
-        
+
         // Send processing reaction
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
 
@@ -1549,7 +1548,7 @@ case 'wp': {
 
         // Get first 3 wallpapers
         const wallpapers = response.data.results.slice(0, 3);
-        
+
         // Send each wallpaper as a separate message
         for (let i = 0; i < wallpapers.length; i++) {
             const wallpaper = wallpapers[i];
@@ -1561,7 +1560,7 @@ case 'wp': {
                             `🔗 *Source:* ${wallpaper.source || "N/A"}\n\n` +
                             `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
                 });
-                
+
                 // Add delay between messages to avoid rate limiting
                 if (i < wallpapers.length - 1) {
                     await delay(1000);
@@ -1600,7 +1599,7 @@ case 'jokes': {
         }
 
         const joke = response.data.result;
-        
+
         let message = `😂 *Joke of the Moment*\n\n` +
                      `📝 *Type:* ${joke.type}\n\n` +
                      `❓ *Setup:* ${joke.setup}\n` +
@@ -1642,7 +1641,7 @@ case 'shorturl': {
         }
 
         const url = q.trim();
-        
+
         // Validate URL
         try {
             new URL(url);
@@ -1666,7 +1665,7 @@ case 'shorturl': {
         }
 
         const shortenedUrl = response.data.result;
-        
+
         let message = `🔗 *URL Shortener*\n\n` +
                      `📎 *Original URL:* ${url}\n` +
                      `➡️ *Shortened URL:* ${shortenedUrl}\n\n` +
@@ -1689,7 +1688,7 @@ case 'shorturl': {
     }
     break;
 }
-    
+
 
 // ==================== IMDB MOVIE SEARCH ====================
 case 'imdb':
@@ -1712,7 +1711,7 @@ case 'movie': {
         // Call IMDb API
         const apiUrl = `https://apis.davidcyriltech.my.id/imdb?query=${encodeURIComponent(q)}`;
         const response = await axios.get(apiUrl, { timeout: 10000 });
-        
+
         if (!response.data?.status || !response.data.movie) {
             return await socket.sendMessage(sender, {
                 text: '🎬 *Movie not found* - Please check the name and try again'
@@ -1768,9 +1767,6 @@ ${movie.plot}
     break;
 }
 
-// ==================== NPM SEARCH ====================
-
-
 // ==================== QR CODE READER ====================
 case 'qrread':
 case 'scanqr':
@@ -1780,9 +1776,9 @@ case 'scanqrcode': {
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage ? 
             msg.message.extendedTextMessage.contextInfo : 
             msg;
-        
+
         const mimeType = getContentType(quotedMsg);
-        
+
         if (!mimeType || !mimeType.startsWith('image')) {
             return await socket.sendMessage(sender, {
                 text: '❌ Please reply to an image (JPEG/PNG) containing a QR code'
@@ -1803,7 +1799,7 @@ case 'scanqrcode': {
 
         try {
             const image = await Jimp.read(tempPath);
-            
+
             // Simple QR code detection (basic implementation)
             // For production, you might want to use a proper QR code library
             const qrText = await new Promise((resolve) => {
@@ -1852,7 +1848,7 @@ case 'commands':
 case 'help': {
     try {
         await socket.sendMessage(sender, { react: { text: '📋', key: msg.key } });
-        
+
         // Categorize all commands
         const commandCategories = {
             '📥 DOWNLOAD COMMANDS': [
@@ -1884,7 +1880,7 @@ case 'help': {
         };
 
         let menuMessage = `*🤖 SUBZERO MD - ALL COMMANDS*\n\n`;
-        
+
         // Add each category with its commands
         for (const [category, commands] of Object.entries(commandCategories)) {
             menuMessage += `*${category}:*\n`;
@@ -1917,7 +1913,7 @@ case 'dlmenu':
 case 'downloadmenu': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '📥', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -1945,7 +1941,7 @@ case 'searchmenu':
 case 'search': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '🔍', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -1976,7 +1972,7 @@ case 'aimenu':
 case 'aimenuu': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '🤖', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2002,7 +1998,7 @@ case 'toolsmenu':
 case 'tools': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '🛠️', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2042,7 +2038,7 @@ case 'ownercommands': {
 
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '👑', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2070,11 +2066,11 @@ case 'mainmenu':
 case 'allcommands': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '📋', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: config.RCD_IMAGE_PATH },
         caption: formatMessage(
-            ' Ξ sᴜʙᴢᴇʀᴏ ʙᴏᴛ ʟɪᴛᴇ',
+            'Ξ sᴜʙᴢᴇʀᴏ ʙᴏᴛ ʟɪᴛᴇ',
             `
 *╭─「 ALL COMMANDS 」*
 *│*📥 *Download:* song, tiktok, fb, ig, yt, apk
@@ -2097,19 +2093,19 @@ case 'allcommands': {
 case 'menu': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '🗂️', key: msg.key } });
-    
+
     const startTime = socketCreationTime.get(number) || Date.now();
     const uptimeMs = Date.now() - startTime;
     const hours = Math.floor(uptimeMs / 3600000);
     const minutes = Math.floor((uptimeMs % 3600000) / 60000);
     const seconds = Math.floor((uptimeMs % 60000) / 1000);
     const uptime = `${hours}h ${minutes}m ${seconds}s`;
-    
+
     // Get memory usage
     const memoryUsage = process.memoryUsage();
     const ramUsed = Math.round(memoryUsage.heapUsed / 1024 / 1024);
     const ramTotal = Math.round(memoryUsage.heapTotal / 1024 / 1024);
-    
+
     // Get user's pushname
     let pushname = 'User';
     try {
@@ -2203,7 +2199,7 @@ case 'menu': {
 case 'alive': {
     // Add reaction first
     await socket.sendMessage(from, { react: { text: '❤️', key: msg.key } });
-    
+
     const startTime = socketCreationTime.get(number) || Date.now();
     const uptime = Math.floor((Date.now() - startTime) / 1000);
     const hours = Math.floor(uptime / 3600);
@@ -2266,7 +2262,7 @@ case 'alive': {
 
 case 'groupmenu': {
     await socket.sendMessage(from, { react: { text: '👥', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2305,7 +2301,7 @@ case 'groupmenu': {
 
 case 'dlmenu': {
     await socket.sendMessage(from, { react: { text: '📥', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2327,7 +2323,7 @@ case 'dlmenu': {
 
 case 'searchmenu': {
     await socket.sendMessage(from, { react: { text: '🔍', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2348,7 +2344,7 @@ case 'searchmenu': {
 
 case 'aimenu': {
     await socket.sendMessage(from, { react: { text: '🤖', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2370,7 +2366,7 @@ case 'aimenu': {
 
 case 'toolsmenu': {
     await socket.sendMessage(from, { react: { text: '🛠️', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2392,7 +2388,7 @@ case 'toolsmenu': {
 
 case 'ownermenu': {
     await socket.sendMessage(from, { react: { text: '👑', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2420,7 +2416,7 @@ case 'ownermenu': {
 
 case 'mainmenu': {
     await socket.sendMessage(from, { react: { text: '🏠', key: msg.key } });
-    
+
     await socket.sendMessage(from, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2442,8 +2438,11 @@ case 'mainmenu': {
     }, { quoted: msg });
     break;
 }
-       
+
                 case 'fc': {
+                    const q = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+                    const args = q.split(' ').slice(1); // Split command and get arguments
+
                     if (args.length === 0) {
                         return await socket.sendMessage(sender, {
                             text: '❗ Please provide a channel JID.\n\nExample:\n.fcn 120363396379901844@newsletter'
@@ -2479,7 +2478,7 @@ case 'mainmenu': {
                     break;
                 }
                 //==============================
-                
+
                 // Add these cases to your switch statement
 
 case 'repo':
@@ -2487,7 +2486,7 @@ case 'source':
 case 'sourcecode':
 case 'code': {
     await socket.sendMessage(sender, { react: { text: '📦', key: msg.key } });
-    
+
     await socket.sendMessage(sender, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2530,18 +2529,18 @@ case 'about':
 case 'info':
 case 'botinfo': {
     await socket.sendMessage(sender, { react: { text: '🤖', key: msg.key } });
-    
+
     const startTime = socketCreationTime.get(number) || Date.now();
     const uptimeMs = Date.now() - startTime;
     const hours = Math.floor(uptimeMs / 3600000);
     const minutes = Math.floor((uptimeMs % 3600000) / 60000);
     const seconds = Math.floor((uptimeMs % 60000) / 1000);
-    
+
     // Get memory usage
     const memoryUsage = process.memoryUsage();
     const ramUsed = Math.round(memoryUsage.heapUsed / 1024 / 1024);
     const ramTotal = Math.round(memoryUsage.heapTotal / 1024 / 1024);
-    
+
     await socket.sendMessage(sender, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2579,7 +2578,7 @@ case 'support':
 case 'help':
 case 'contact': {
     await socket.sendMessage(sender, { react: { text: '🆘', key: msg.key } });
-    
+
     await socket.sendMessage(sender, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2632,7 +2631,7 @@ case 'channel':
 case 'news':
 case 'updates': {
     await socket.sendMessage(sender, { react: { text: '📢', key: msg.key } });
-    
+
     await socket.sendMessage(sender, {
         image: { url: "https://mrfrankk-cdn.hf.space/mrfrank/mini/menu.png" },
         caption: formatMessage(
@@ -2678,11 +2677,11 @@ https://whatsapp.com/channel/0029VagQEmB002T7MWo3Sj1D
 }
 
 case 'owner':
-case 'dev2':
+case 'dev':
 case 'developer':
 case 'creator': {
     await socket.sendMessage(sender, { react: { text: '👑', key: msg.key } });
-    
+
     // Create vcard for contact
     const vcard = `BEGIN:VCARD
 VERSION:3.0
@@ -2899,7 +2898,7 @@ case 'pair': {
         // Try primary URL first, then fallback
         let result;
         let apiUsed = 'primary';
-        
+
         try {
             const primaryUrl = `${apiUrl}/code?number=${encodeURIComponent(number)}`;
             const response = await fetch(primaryUrl);
@@ -2909,7 +2908,7 @@ case 'pair': {
         } catch (primaryError) {
             console.log("❌ Primary API failed, trying fallback...", primaryError);
             apiUsed = 'fallback';
-            
+
             try {
                 const fallbackUrl = `https://subzero-md.koyeb.app/code?number=${encodeURIComponent(number)}`;
                 const response = await fetch(fallbackUrl);
@@ -3016,7 +3015,7 @@ const buttonMessage = {
             type: 4,
             nativeFlowInfo: {
                 name: 'single_select',
-                paramsJson: JSON.stringify({
+                paramsJson: JSON.JSON.stringify({
                     title: 'Available Text Effects',
                     sections: [
                         {
@@ -3110,18 +3109,18 @@ case 'tourl': {
         let mediaMsg = null;
         let mediaType = '';
         let mimeType = '';
-        
+
         // Check for quoted media first
         if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
             const quotedMsg = msg.message.extendedTextMessage.contextInfo.quotedMessage;
             mimeType = getContentType(quotedMsg);
-            
+
             if (mimeType && (mimeType.includes('image') || mimeType.includes('video') || mimeType.includes('audio') || mimeType.includes('application'))) {
                 mediaMsg = quotedMsg[mimeType];
                 mediaType = mimeType.replace('Message', '').toLowerCase(); // imageMessage -> image
             }
         }
-        
+
         // If no quoted media, check if the message itself contains media
         if (!mediaMsg) {
             mimeType = getContentType(msg.message);
@@ -3157,7 +3156,7 @@ case 'tourl': {
                 chunks.push(chunk);
             }
             mediaBuffer = Buffer.concat(chunks);
-            
+
             // Create temporary file
             tempFilePath = path.join(os.tmpdir(), `cdn_upload_${Date.now()}`);
             fs.writeFileSync(tempFilePath, mediaBuffer);
@@ -3172,7 +3171,7 @@ case 'tourl': {
         try {
             // Get the correct extension for the mime type
             const extension = getExtension(mimeType);
-            
+
             // Process filename
             let fileName;
             if (customFileName && customFileName.trim().length > 0) {
@@ -3313,7 +3312,7 @@ break;
   }
 
   break;
- 
+
 }
 
 // ==========
@@ -3366,7 +3365,7 @@ break;
   break;
        }
          //===========
-       
+
               case 'ts': {
     const axios = require('axios');
 
@@ -3481,7 +3480,7 @@ break;
 
     break;
 }
-        
+
 //============
       case 'bomb': {
     const q = msg.message?.conversation ||
@@ -3606,13 +3605,13 @@ case 'gpt': {
         // Aria API configuration
         const ARIA_API = "https://kaiz-apis.gleeze.com/api/aria";
         const API_KEY = "cf2ca612-296f-45ba-abbc-473f18f991eb";
-        
+
         // Get user ID for context
         const userId = sender.split('@')[0];
-        
+
         // Build API URL
         const apiUrl = `${ARIA_API}?ask=${encodeURIComponent(question)}&uid=${userId}&apikey=${API_KEY}`;
-        
+
         // Call Aria API
         const response = await axios.get(apiUrl, { 
             timeout: 30000,
@@ -3629,7 +3628,7 @@ case 'gpt': {
 
         // Format the response
         let formattedResponse = ariaData.response;
-        
+
         // Truncate if too long (WhatsApp message limit)
         if (formattedResponse.length > 3500) {
             formattedResponse = formattedResponse.substring(0, 3500) + '...\n\n*Response truncated due to length*';
@@ -3675,7 +3674,7 @@ END:VCARD`
 
                 case 'gossip':
     try {
-        
+
         const response = await fetch('https://suhas-bro-api.vercel.app/news/gossiplankanews');
         if (!response.ok) {
             throw new Error('API එකෙන් news ගන්න බැරි වුණා.බන් 😩');
@@ -3693,7 +3692,7 @@ END:VCARD`
 
         let thumbnailUrl = 'https://via.placeholder.com/150';
         try {
-            
+
             const pageResponse = await fetch(link);
             if (pageResponse.ok) {
                 const pageHtml = await pageResponse.text();
@@ -3717,7 +3716,7 @@ END:VCARD`
             caption: formatMessage(
                 '📰 SUBZERO GOSSIP නවතම පුවත් 📰',
                 `📢 *${title}*\n\n${desc}\n\n🕒 *Date*: ${date || 'තවම ලබාදීලා නැත'}\n🌐 *Link*: ${link}`,
-                '𝐒UBZERO'
+                '𝐒𝐔𝐁𝐙𝐄𝐑𝐎'
             )
         });
     } catch (error) {
@@ -3729,14 +3728,14 @@ END:VCARD`
     //==============================
                case 'nasa':
     try {
-      
+
         const response = await fetch('https://api.nasa.gov/planetary/apod?api_key=8vhAFhlLCDlRLzt5P1iLu2OOMkxtmScpO5VmZEjZ');
         if (!response.ok) {
             throw new Error('Failed to fetch APOD from NASA API');
         }
         const data = await response.json();
 
-     
+
         if (!data.title || !data.explanation || !data.date || !data.url || data.media_type !== 'image') {
             throw new Error('Invalid APOD data received or media type is not an image');
         }
@@ -3744,7 +3743,7 @@ END:VCARD`
         const { title, explanation, date, url, copyright } = data;
         const thumbnailUrl = url || 'https://via.placeholder.com/150'; // Use APOD image URL or fallback
 
-     
+
         await socket.sendMessage(sender, {
             image: { url: thumbnailUrl },
             caption: formatMessage(
@@ -3762,7 +3761,7 @@ END:VCARD`
     }
     break;
     //==============================
-    
+
                 case 'news':
                     try {
                         const response = await fetch('https://suhas-bro-api.vercel.app/news/lnw');
@@ -3810,7 +3809,7 @@ END:VCARD`
                         });
                     }
                     break;
-                    
+
                     //==============================
                 case 'cricket':
                     try {
@@ -3854,8 +3853,8 @@ END:VCARD`
                         });
                     }
                     break;
-                
-                //==============================
+
+                    //==============================
                 case 'winfo':
                     console.log('winfo command triggered for:', number);
                     if (!args[0]) {
@@ -3946,7 +3945,7 @@ END:VCARD`
 
                     console.log('User profile sent successfully for .winfo');
                     break;
-                    
+
                     //==============================
                 // ==================== FACEBOOK DOWNLOAD (BUTTONED) ====================
 case 'fb':
@@ -3981,7 +3980,7 @@ case 'facebook': {
         // Fetch Facebook video info
         const FACEBOOK_API_URL = 'https://dev-priyanshi.onrender.com/api/alldl';
         const apiUrl = `${FACEBOOK_API_URL}?url=${encodeURIComponent(q)}`;
-        
+
         const response = await axios.get(apiUrl, {
             timeout: 30000,
             headers: {
@@ -4042,13 +4041,13 @@ case 'facebook': {
                     try {
                         const isHighQuality = buttonId.startsWith(`fb-high-${sessionId}`);
                         const videoUrl = isHighQuality ? videoData.high : videoData.low;
-                        
+
                         // Download the video
                         const videoResponse = await axios.get(videoUrl, {
                             responseType: 'arraybuffer',
                             timeout: 60000
                         });
-                        
+
                         const videoBuffer = Buffer.from(videoResponse.data, 'binary');
                         const fileName = `${(videoData.title || 'facebook_video').replace(/[<>:"\/\\|?*]+/g, '')}.mp4`;
 
@@ -4058,7 +4057,7 @@ case 'facebook': {
                             caption: `📥 *${videoData.title || 'Facebook Video'}*\n` +
                                     `📏 *Quality:* ${isHighQuality ? 'High' : 'Low'}\n` +
                                     `🌐 *Source:* Facebook\n\n` +
-                                    `>  © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
+                                    `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
                             fileName: fileName
                         }, { quoted: messageData });
 
@@ -4126,7 +4125,7 @@ case 'instagram': {
         // Fetch Instagram video info
         const INSTAGRAM_API_URL = 'https://dev-priyanshi.onrender.com/api/alldl';
         const apiUrl = `${INSTAGRAM_API_URL}?url=${encodeURIComponent(q)}`;
-        
+
         const response = await axios.get(apiUrl, {
             timeout: 30000,
             headers: {
@@ -4187,13 +4186,13 @@ case 'instagram': {
                     try {
                         const isHighQuality = buttonId.startsWith(`ig-high-${sessionId}`);
                         const videoUrl = isHighQuality ? videoData.high : videoData.low;
-                        
+
                         // Download the video
                         const videoResponse = await axios.get(videoUrl, {
                             responseType: 'arraybuffer',
                             timeout: 60000
                         });
-                        
+
                         const videoBuffer = Buffer.from(videoResponse.data, 'binary');
                         const fileName = `${(videoData.title || 'instagram_media').replace(/[<>:"\/\\|?*]+/g, '')}.mp4`;
 
@@ -4203,7 +4202,7 @@ case 'instagram': {
                             caption: `📸 *${videoData.title || 'Instagram Media'}*\n` +
                                     `📏 *Quality:* ${isHighQuality ? 'High' : 'Low'}\n` +
                                     `🌐 *Source:* Instagram\n\n` +
-                                    `>  © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
+                                    `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
                             fileName: fileName
                         }, { quoted: messageData });
 
@@ -4271,7 +4270,7 @@ case 'tt': {
         // Fetch TikTok video info
         const TIKTOK_API_URL = 'https://dev-priyanshi.onrender.com/api/alldl';
         const apiUrl = `${TIKTOK_API_URL}?url=${encodeURIComponent(q)}`;
-        
+
         const response = await axios.get(apiUrl, {
             timeout: 30000,
             headers: {
@@ -4333,15 +4332,15 @@ case 'tt': {
                     try {
                         const isVideo = buttonId.startsWith(`tt-video-${sessionId}`);
                         const mediaUrl = isVideo ? videoData.play : videoData.play;
-                        
+
                         // Download the media
                         const mediaResponse = await axios.get(mediaUrl, {
                             responseType: 'arraybuffer',
                             timeout: 60000
                         });
-                        
+
                         const mediaBuffer = Buffer.from(mediaResponse.data, 'binary');
-                        
+
                         if (isVideo) {
                             const fileName = `${(videoData.title || 'tiktok_video').replace(/[<>:"\/\\|?*]+/g, '')}.mp4`;
                             await socket.sendMessage(sender, {
@@ -4397,6 +4396,7 @@ case 'tt': {
     break;
 }
 //==============================
+
 case 'song':
 case 'ytaudio':
 case 'play': {
@@ -4436,7 +4436,7 @@ case 'play': {
         // Utility function to fetch audio from Hector's API
         async function fetchAudioData(videoUrl) {
             const HECTOR_API_URL = 'https://yt-dl.officialhectormanuel.workers.dev/';
-            
+
             const apiUrl = `${HECTOR_API_URL}?url=${encodeURIComponent(videoUrl)}`;
             const response = await axios.get(apiUrl, {
                 timeout: 15000,
@@ -4444,7 +4444,7 @@ case 'play': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
             });
-            
+
             if (!response.data?.status || !response.data?.audio) {
                 throw new Error('Invalid API response or no audio available');
             }
@@ -4508,7 +4508,7 @@ case 'play': {
 
                     try {
                         const type = buttonId.startsWith(`song-audio-${sessionId}`) ? 'audio' : 'document';
-                        
+
                         // Download audio from Hector's API
                         const audioResponse = await axios.get(songData.audio, {
                             responseType: 'arraybuffer',
@@ -4570,6 +4570,7 @@ case 'play': {
     break;
 }
 //==============================
+
 case 'ytmax':
 case 'ytpro':
 case 'ytvideo': {
@@ -4613,7 +4614,7 @@ case 'ytvideo': {
         // Utility function to fetch data from Hector's API
         async function fetchMediaData(videoUrl) {
             const HECTOR_API_URL = 'https://yt-dl.officialhectormanuel.workers.dev/';
-            
+
             const apiUrl = `${HECTOR_API_URL}?url=${encodeURIComponent(videoUrl)}`;
             const response = await axios.get(apiUrl, {
                 timeout: 20000,
@@ -4621,7 +4622,7 @@ case 'ytvideo': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
             });
-            
+
             if (!response.data?.status) {
                 throw new Error('Invalid API response or video not available');
             }
@@ -4658,7 +4659,7 @@ case 'ytvideo': {
         // Add video quality buttons
         if (mediaData.videos) {
             const qualities = Object.keys(mediaData.videos).sort((a, b) => parseInt(a) - parseInt(b));
-            
+
             // Add first 3 qualities as buttons
             qualities.slice(0, 3).forEach(quality => {
                 buttons.push({
@@ -4708,16 +4709,16 @@ case 'ytvideo': {
                         if (action === 'audio') {
                             // Handle audio download
                             await downloadAndSendAudio(mediaData.audio, mediaData.title, messageData, false);
-                            
+
                         } else if (action === 'more') {
                             // Show all available qualities
                             await showAllQualities(mediaData, videoInfo, videoUrl, messageData, sessionId);
-                            
+
                         } else if (!isNaN(parseInt(action))) {
                             // Handle video quality download
                             const quality = action;
                             await downloadAndSendVideo(mediaData.videos[quality], quality, mediaData.title, messageData);
-                            
+
                         }
 
                         await socket.sendMessage(sender, { react: { text: '✅', key: messageData.key } });
@@ -4740,7 +4741,7 @@ case 'ytvideo': {
         // Function to show all available qualities
         async function showAllQualities(mediaData, videoInfo, videoUrl, originalMsg, sessionId) {
             const allQualities = Object.keys(mediaData.videos || {}).sort((a, b) => parseInt(b) - parseInt(a));
-            
+
             if (!allQualities.length) {
                 return await socket.sendMessage(sender, {
                     text: '❌ No video qualities available for this video.'
@@ -4839,7 +4840,7 @@ case 'ytvideo': {
                 if (!messageData?.message?.buttonsResponseMessage) return;
 
                 const buttonId = messageData.message.buttonsResponseMessage.selectedButtonId;
-                
+
                 if (buttonId.includes(`ytmax-quality-`) && buttonId.includes(sessionId)) {
                     socket.ev.off('messages.upsert', qualityHandler);
 
@@ -4887,7 +4888,7 @@ case 'ytvideo': {
         console.error('YTMax Command Error:', error);
         await socket.sendMessage(sender, { react: { text: '❌', key: msg.key } });
         await socket.sendMessage(sender, {
-            text: `❎ YTMax Error: ${error.message || 'An unexpected error occurred'}\n\nPlease try again with a different video or check the URL.`
+            text: `❎ YTMax Error: ${error.message || 'An unexpected error occurred'}\n\nPlease try again with adifferent video or check the URL.`
         }, { quoted: msg });
     }
     break;
@@ -4937,7 +4938,7 @@ case 'vid': {
         // Fetch video info
         const VIDEO_API_URL = 'https://dev-priyanshi.onrender.com/api/alldl';
         const apiUrl = `${VIDEO_API_URL}?url=${encodeURIComponent(videoUrl)}`;
-        
+
         const response = await axios.get(apiUrl, {
             timeout: 30000,
             headers: {
@@ -4957,11 +4958,11 @@ case 'vid': {
         // Create buttons message
         let caption = `🎬 *Video Downloader*\n\n` +
                      `📌 *Title:* ${videoData.title || 'Video'}\n`;
-        
+
         if (isSearch) {
             caption += `🔍 *Searched for:* "${q}"\n`;
         }
-        
+
         caption += `🔄 *Quality Options Available*\n\n` +
                  `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`;
 
@@ -5005,13 +5006,13 @@ case 'vid': {
                     try {
                         const isHighQuality = buttonId.startsWith(`video-high-${sessionId}`);
                         const selectedVideoUrl = isHighQuality ? videoData.high : videoData.low;
-                        
+
                         // Download the video
                         const videoResponse = await axios.get(selectedVideoUrl, {
                             responseType: 'arraybuffer',
                             timeout: 60000
                         });
-                        
+
                         const videoBuffer = Buffer.from(videoResponse.data, 'binary');
                         const fileName = `${(videoData.title || 'video').replace(/[<>:"\/\\|?*]+/g, '')}.mp4`;
 
@@ -5078,7 +5079,7 @@ case '🔥': {
         // Get the actual media message from the quoted message
         const mimeType = getContentType(quotedMsg);
         const mediaMessage = quotedMsg[mimeType];
-        
+
         if (!mimeType || !(mimeType.includes('image') || mimeType.includes('video') || mimeType.includes('audio') || mimeType.includes('sticker'))) {
             return await socket.sendMessage(sender, {
                 text: '❗ Only images, videos, audio, and stickers are supported'
@@ -5090,7 +5091,7 @@ case '🔥': {
 
         // Determine media type
         let mediaType = mimeType.replace('Message', '').toLowerCase(); // imageMessage -> image
-        
+
         // Download the media
         let mediaBuffer;
         try {
@@ -5124,7 +5125,7 @@ case '🔥': {
                     }
                 }, { quoted: msg });
                 break;
-                
+
             case 'video':
                 await socket.sendMessage(sender, {
                     video: mediaBuffer,
@@ -5134,18 +5135,17 @@ case '🔥': {
                     }
                 }, { quoted: msg });
                 break;
-                
+
             case 'audio':
                 await socket.sendMessage(sender, {
                     audio: mediaBuffer,
                     mimetype: 'audio/mp4',
-                    ptt: false,
                     contextInfo: {
                         mentionedJid: [sender]
                     }
                 }, { quoted: msg });
                 break;
-                
+
             case 'sticker':
                 await socket.sendMessage(sender, {
                     sticker: mediaBuffer,
@@ -5154,7 +5154,7 @@ case '🔥': {
                     }
                 }, { quoted: msg });
                 break;
-                
+
             default:
                 return await socket.sendMessage(sender, {
                     text: '❌ Unsupported media type'
@@ -5213,7 +5213,7 @@ case 'img': {
 
         // Call Pinterest API
         const apiUrl = `https://supun-md-api-xmjh.vercel.app/api/pinterest-search?q=${encodeURIComponent(searchQuery)}`;
-        
+
         const response = await axios.get(apiUrl, {
             timeout: 30000,
             headers: {
@@ -5302,7 +5302,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
 
     const senderJid = message.key.remoteJid;
     const body = message.message.conversation || message.message.extendedTextMessage?.text || '';
-    
+
     const imageData = global.imageDownloads.get(senderJid);
     if (!imageData || (Date.now() - imageData.timestamp) > 300000) {
         if (global.imageDownloads.has(senderJid)) {
@@ -5315,7 +5315,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
         if (message.message.buttonsResponseMessage) {
             // Handle button clicks
             const buttonId = message.message.buttonsResponseMessage.selectedButtonId;
-            
+
             if (buttonId.startsWith(`pin-all-${imageData.sessionId}`)) {
                 // Download all requested images
                 await socket.sendMessage(senderJid, { 
@@ -5323,7 +5323,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
                 }, { quoted: message });
 
                 const imagesToSend = imageData.images.slice(0, imageData.requestedCount);
-                
+
                 for (let i = 0; i < imagesToSend.length; i++) {
                     try {
                         await socket.sendMessage(senderJid, {
@@ -5345,7 +5345,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
             } else if (buttonId.startsWith(`pin-single-${imageData.sessionId}`)) {
                 // Send single random image
                 const randomImage = imageData.images[Math.floor(Math.random() * imageData.images.length)];
-                
+
                 await socket.sendMessage(senderJid, {
                     image: { url: randomImage },
                     caption: `🖼️ *Random Image*\n` +
@@ -5370,7 +5370,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
                 });
 
             }
-            
+
             // Clear the image data after processing
             global.imageDownloads.delete(senderJid);
 
@@ -5395,7 +5395,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
             }, { quoted: message });
 
             const imagesToSend = customData.images.slice(0, amount);
-            
+
             for (let i = 0; i < imagesToSend.length; i++) {
                 try {
                     await socket.sendMessage(senderJid, {
@@ -5422,7 +5422,7 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
         await socket.sendMessage(senderJid, {
             text: '❌ Error processing your request'
         }, { quoted: message });
-        
+
         // Clean up
         if (global.imageDownloads.has(senderJid)) global.imageDownloads.delete(senderJid);
         if (global.customImageAmount && global.customImageAmount.has(senderJid)) {
@@ -5435,8 +5435,8 @@ socket.ev.on('messages.upsert', async ({ messages }) => {
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-//==============================//==============================
-  case 'ai2': {
+//==============================
+case 'ai2': {
     try {
         const q = msg.message?.conversation ||
                   msg.message?.extendedTextMessage?.text ||
@@ -5454,7 +5454,7 @@ function delay(ms) {
 
         // Call Venice AI API
         const apiUrl = `https://api-toxxic.zone.id/api/ai/venice?prompt=${encodeURIComponent(q)}`;
-        
+
         const response = await axios.get(apiUrl, {
             timeout: 30000,
             headers: {
@@ -5494,10 +5494,10 @@ case 'antical': {
 
         if (!option) {
             const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            
+
             const buttonsMessage = {
                 image: { url: config.RCD_IMAGE_PATH },
-                caption: `📵 *ANTI-CALL SETTINGS*\n\nCurrent Status: ${isEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\nSelect an option:\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
+                caption: `📵 *ANTI-CALL SETTINGS*\n\nCurrent Status: ${isEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\nSelect an option:\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`,
                 footer: 'Toggle anti-call feature',
                 buttons: [
                     {
@@ -5540,21 +5540,21 @@ case 'antical': {
                             updatedConfig.ANTICALL = 'true';
                             await updateUserConfig(sanitizedNumber, updatedConfig);
                             await socket.sendMessage(sender, {
-                                text: "✅ *Anti-call feature enabled*\n\nAll incoming calls will be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                                text: "✅ *Anti-call feature enabled*\n\nAll incoming calls will be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ"
                             }, { quoted: messageData });
                         } 
                         else if (buttonId.startsWith(`anticall-disable-${sessionId}`)) {
                             updatedConfig.ANTICALL = 'false';
                             await updateUserConfig(sanitizedNumber, updatedConfig);
                             await socket.sendMessage(sender, {
-                                text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊�Federal𝘾 ッ"
+                                text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ"
                             }, { quoted: messageData });
                         }
                         else if (buttonId.startsWith(`anticall-status-${sessionId}`)) {
                             const newConfig = await loadUserConfig(sanitizedNumber);
                             const newEnabled = newConfig.ANTICALL === 'true';
                             await socket.sendMessage(sender, {
-                                text: `📊 *Anti-call Status:* ${newEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                                text: `📊 *Anti-call Status:* ${newEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`
                             }, { quoted: messageData });
                         }
 
@@ -5573,13 +5573,13 @@ case 'antical': {
                 userConfig.ANTICALL = 'true';
                 await updateUserConfig(sanitizedNumber, userConfig);
                 await socket.sendMessage(sender, {
-                    text: "✅ *Anti-call feature enabled*\n\nAll incoming calls will be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                    text: "✅ *Anti-call feature enabled*\n\nAll incoming calls will be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ"
                 }, { quoted: msg });
             } else if (option === "off" || option === "false") {
                 userConfig.ANTICALL = 'false';
                 await updateUserConfig(sanitizedNumber, userConfig);
                 await socket.sendMessage(sender, {
-                    text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                    text: "❌ *Anti-call feature disabled*\n\nIncoming calls will not be automatically rejected.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ"
                 }, { quoted: msg });
             } else {
                 await socket.sendMessage(sender, {
@@ -5607,7 +5607,7 @@ case 'mode': {
             sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
         } catch {}
         const isSudoUser = sudoUsers.includes(nowsender);
-        
+
         if (!isOwner && !isBotOwner && !isSudoUser) {
             return await socket.sendMessage(sender, {
                 text: "*📛 Only the bot owner or sudo users can change mode!*"
@@ -5616,17 +5616,17 @@ case 'mode': {
 
         const userConfig = await loadUserConfig(sanitizedNumber);
         const newMode = args[0]?.toLowerCase();
-        
+
         if (!newMode || !['public', 'private'].includes(newMode)) {
             return await socket.sendMessage(sender, {
-                text: `🔐 *Current Mode:* ${(userConfig.MODE || config.MODE).toUpperCase()}\n\n*Usage:* .mode public OR .mode private\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                text: `🔐 *Current Mode:* ${(userConfig.MODE || config.MODE).toUpperCase()}\n\n*Usage:* .mode public OR .mode private\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`
             }, { quoted: msg });
         }
 
         userConfig.MODE = newMode;
         await updateUserConfig(sanitizedNumber, userConfig);
         await socket.sendMessage(sender, {
-            text: `🔐 *Mode Changed to ${newMode.toUpperCase()}*\n\n${newMode === 'private' ? '🔒 Only sudo users can use the bot.' : '🔓 Everyone can use the bot.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            text: `🔐 *Mode Changed to ${newMode.toUpperCase()}*\n\n${newMode === 'private' ? '🔒 Only sudo users can use the bot.' : '🔓 Everyone can use the bot.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`
         }, { quoted: msg });
     } catch (error) {
         console.error('Mode command error:', error);
@@ -5648,7 +5648,7 @@ case 'prefix': {
             sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
         } catch {}
         const isSudoUser = sudoUsers.includes(nowsender);
-        
+
         if (!isOwner && !isBotOwner && !isSudoUser) {
             return await socket.sendMessage(sender, {
                 text: "*📛 Only the bot owner or sudo users can change prefix!*"
@@ -5657,10 +5657,10 @@ case 'prefix': {
 
         const userConfig = await loadUserConfig(sanitizedNumber);
         const newPrefix = args[0];
-        
+
         if (!newPrefix) {
             return await socket.sendMessage(sender, {
-                text: `📌 *Current Prefix:* ${userConfig.PREFIX || config.PREFIX}\n\n*Usage:* .setprefix ! \n*Examples:* .setprefix # OR .setprefix / \n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                text: `📌 *Current Prefix:* ${userConfig.PREFIX || config.PREFIX}\n\n*Usage:* .setprefix ! \n*Examples:* .setprefix # OR .setprefix / \n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`
             }, { quoted: msg });
         }
 
@@ -5673,7 +5673,7 @@ case 'prefix': {
         userConfig.PREFIX = newPrefix;
         await updateUserConfig(sanitizedNumber, userConfig);
         await socket.sendMessage(sender, {
-            text: `📌 *Prefix Changed to:* ${newPrefix}\n\nAll commands now use this prefix.\n*Example:* ${newPrefix}menu\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            text: `📌 *Prefix Changed to:* ${newPrefix}\n\nAll commands now use this prefix.\n*Example:* ${newPrefix}menu\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`
         }, { quoted: msg });
     } catch (error) {
         console.error('Setprefix command error:', error);
@@ -5695,7 +5695,7 @@ case 'autorecording': {
             sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
         } catch {}
         const isSudoUser = sudoUsers.includes(nowsender);
-        
+
         if (!isOwner && !isBotOwner && !isSudoUser) {
             return await socket.sendMessage(sender, {
                 text: "*📛 Only the bot owner or sudo users can change this setting!*"
@@ -5704,10 +5704,10 @@ case 'autorecording': {
 
         const userConfig = await loadUserConfig(sanitizedNumber);
         const option = args[0]?.toLowerCase();
-        
+
         if (!option || !['on', 'off', 'true', 'false'].includes(option)) {
             return await socket.sendMessage(sender, {
-                text: `🎙️ *Auto Recording:* ${(userConfig.AUTO_RECORDING || config.AUTO_RECORDING) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .setautorecording on OR .setautorecording off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                text: `🎙️ *Auto Recording:* ${(userConfig.AUTO_RECORDING || config.AUTO_RECORDING) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .setautorecording on OR .setautorecording off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊F𝘾 ッ`
             }, { quoted: msg });
         }
 
@@ -5715,7 +5715,7 @@ case 'autorecording': {
         userConfig.AUTO_RECORDING = enabled ? 'true' : 'false';
         await updateUserConfig(sanitizedNumber, userConfig);
         await socket.sendMessage(sender, {
-            text: `🎙️ *Auto Recording ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will show recording status when processing commands.' : 'Recording status disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            text: `🎙️ *Auto Recording ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will show recording status when processing commands.' : 'Recording status disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
         }, { quoted: msg });
     } catch (error) {
         console.error('Auto recording command error:', error);
@@ -5737,7 +5737,7 @@ case 'viewstatus': {
             sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
         } catch {}
         const isSudoUser = sudoUsers.includes(nowsender);
-        
+
         if (!isOwner && !isBotOwner && !isSudoUser) {
             return await socket.sendMessage(sender, {
                 text: "*📛 Only the bot owner or sudo users can change this setting!*"
@@ -5746,10 +5746,10 @@ case 'viewstatus': {
 
         const userConfig = await loadUserConfig(sanitizedNumber);
         const option = args[0]?.toLowerCase();
-        
+
         if (!option || !['on', 'off', 'true', 'false'].includes(option)) {
             return await socket.sendMessage(sender, {
-                text: `👁️ *Auto View Status:* ${(userConfig.AUTO_VIEW_STATUS || config.AUTO_VIEW_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .autoviewstatus on OR .autoviewstatus off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                text: `👁️ *Auto View Status:* ${(userConfig.AUTO_VIEW_STATUS || config.AUTO_VIEW_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .autoviewstatus on OR .autoviewstatus off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
             }, { quoted: msg });
         }
 
@@ -5757,7 +5757,7 @@ case 'viewstatus': {
         userConfig.AUTO_VIEW_STATUS = enabled ? 'true' : 'false';
         await updateUserConfig(sanitizedNumber, userConfig);
         await socket.sendMessage(sender, {
-            text: `👁️ *Auto View Status ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will automatically view all status updates.' : 'Auto view disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            text: `👁️ *Auto View Status ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will automatically view all status updates.' : 'Auto view disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
         }, { quoted: msg });
     } catch (error) {
         console.error('Auto view status command error:', error);
@@ -5779,7 +5779,7 @@ case 'reactstatus': {
             sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
         } catch {}
         const isSudoUser = sudoUsers.includes(nowsender);
-        
+
         if (!isOwner && !isBotOwner && !isSudoUser) {
             return await socket.sendMessage(sender, {
                 text: "*📛 Only the bot owner or sudo users can change this setting!*"
@@ -5788,10 +5788,10 @@ case 'reactstatus': {
 
         const userConfig = await loadUserConfig(sanitizedNumber);
         const option = args[0]?.toLowerCase();
-        
+
         if (!option || !['on', 'off', 'true', 'false'].includes(option)) {
             return await socket.sendMessage(sender, {
-                text: `❤️ *Auto React Status:* ${(userConfig.AUTO_LIKE_STATUS || config.AUTO_LIKE_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .autoreactstatus on OR .autoreactstatus off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                text: `❤️ *Auto React Status:* ${(userConfig.AUTO_LIKE_STATUS || config.AUTO_LIKE_STATUS) === 'true' ? '✅ ON' : '❌ OFF'}\n\n*Usage:* .autoreactstatus on OR .autoreactstatus off\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
             }, { quoted: msg });
         }
 
@@ -5799,7 +5799,7 @@ case 'reactstatus': {
         userConfig.AUTO_LIKE_STATUS = enabled ? 'true' : 'false';
         await updateUserConfig(sanitizedNumber, userConfig);
         await socket.sendMessage(sender, {
-            text: `❤️ *Auto React Status ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will automatically react to all status updates.' : 'Auto react disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙖𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+            text: `❤️ *Auto React Status ${enabled ? 'Enabled' : 'Disabled'}*\n\n${enabled ? 'Bot will automatically react to all status updates.' : 'Auto react disabled.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
         }, { quoted: msg });
     } catch (error) {
         console.error('Auto react status command error:', error);
@@ -5818,14 +5818,14 @@ case 'config': {
         // Bot number is always owner
         const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
         const isBotOwner = nowsender === botOwnerJid;
-        
+
         // Check if user is owner (config owner OR bot number itself OR sudo user)
         let sudoUsers = [];
         try {
             sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
         } catch {}
         const isSudoUser = sudoUsers.includes(nowsender);
-        
+
         if (!isOwner && !isBotOwner && !isSudoUser) {
             return await socket.sendMessage(sender, {
                 text: "*📛 Only the bot owner or sudo users can access settings!*"
@@ -5834,7 +5834,7 @@ case 'config': {
 
         const userConfig = await loadUserConfig(sanitizedNumber);
         const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
+
         const currentSettings = `⚙️ *BOT SETTINGS*\n\n` +
                                `📌 *PREFIX:* ${userConfig.PREFIX || config.PREFIX}\n` +
                                `🔐 *MODE:* ${(userConfig.MODE || config.MODE).toUpperCase()}\n` +
@@ -5842,7 +5842,7 @@ case 'config': {
                                `❤️ *AUTO REACT STATUS:* ${(userConfig.AUTO_LIKE_STATUS || config.AUTO_LIKE_STATUS) === 'true' ? '✅' : '❌'}\n` +
                                `📵 *ANTI-CALL:* ${(userConfig.ANTICALL || config.ANTICALL) === 'true' ? '✅' : '❌'}\n` +
                                `🎙️ *AUTO RECORDING:* ${(userConfig.AUTO_RECORDING || config.AUTO_RECORDING) === 'true' ? '✅' : '❌'}\n\n` +
-                               `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`;
+                               `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`;
 
         const buttonsMessage = {
             image: { url: config.RCD_IMAGE_PATH },
@@ -5911,26 +5911,26 @@ case 'config': {
                             headerType: 1
                         };
                         await socket.sendMessage(sender, allSettingsMsg, { quoted: messageData });
-                        
+
                         // Re-add listener for sub-settings
                         socket.ev.on('messages.upsert', subSettingsHandler);
                         setTimeout(() => socket.ev.off('messages.upsert', subSettingsHandler), 120000);
-                        
+
                     } else if (buttonId.startsWith(`settings-mode-${sessionId}`)) {
                         // Toggle mode
                         const currentMode = updatedConfig.MODE || config.MODE;
                         updatedConfig.MODE = currentMode === 'public' ? 'private' : 'public';
                         await updateUserConfig(sanitizedNumber, updatedConfig);
                         await socket.sendMessage(sender, {
-                            text: `🔐 *Mode Changed*\n\nBot is now in *${updatedConfig.MODE.toUpperCase()}* mode.\n\n${updatedConfig.MODE === 'private' ? '🔒 Only sudo users can use the bot.' : '🔓 Everyone can use the bot.'}\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                            text: `🔐 *Mode Changed*\\n\\nBot is now in *${updatedConfig.MODE.toUpperCase()}* mode.\\n\\n${updatedConfig.MODE === 'private' ? '🔒 Only sudo users can use the bot.' : '🔓 Everyone can use the bot.'}\\n\\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
                         }, { quoted: messageData });
-                        
+
                     } else if (buttonId.startsWith(`settings-prefix-${sessionId}`)) {
                         // Change prefix - ask for input
                         await socket.sendMessage(sender, {
                             text: `📌 *Change Prefix*\n\nReply with your desired prefix.\n\n*Current:* ${updatedConfig.PREFIX || config.PREFIX}\n*Example:* ! or # or /\n\n_Reply within 60 seconds_`
                         }, { quoted: messageData });
-                        
+
                         // Store pending prefix change
                         if (!global.pendingPrefixChange) global.pendingPrefixChange = new Map();
                         global.pendingPrefixChange.set(nowsender, {
@@ -5965,19 +5965,19 @@ case 'config': {
                         updatedConfig.AUTO_VIEW_STATUS = updatedConfig.AUTO_VIEW_STATUS === 'true' ? 'false' : 'true';
                         await updateUserConfig(sanitizedNumber, updatedConfig);
                         await socket.sendMessage(sender, {
-                            text: `👁️ *Auto View Status ${updatedConfig.AUTO_VIEW_STATUS === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                            text: `👁️ *Auto View Status ${updatedConfig.AUTO_VIEW_STATUS === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
                         }, { quoted: messageData });
                     } else if (buttonId.startsWith(`setting-reactstatus-${sessionId}`)) {
                         updatedConfig.AUTO_LIKE_STATUS = updatedConfig.AUTO_LIKE_STATUS === 'true' ? 'false' : 'true';
                         await updateUserConfig(sanitizedNumber, updatedConfig);
                         await socket.sendMessage(sender, {
-                            text: `❤️ *Auto React Status ${updatedConfig.AUTO_LIKE_STATUS === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                            text: `❤️ *Auto React Status ${updatedConfig.AUTO_LIKE_STATUS === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
                         }, { quoted: messageData });
                     } else if (buttonId.startsWith(`setting-recording-${sessionId}`)) {
                         updatedConfig.AUTO_RECORDING = updatedConfig.AUTO_RECORDING === 'true' ? 'false' : 'true';
                         await updateUserConfig(sanitizedNumber, updatedConfig);
                         await socket.sendMessage(sender, {
-                            text: `🎙️ *Auto Recording ${updatedConfig.AUTO_RECORDING === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`
+                            text: `🎙️ *Auto Recording ${updatedConfig.AUTO_RECORDING === 'true' ? 'Enabled' : 'Disabled'}*\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`
                         }, { quoted: messageData });
                     }
 
@@ -6019,7 +6019,7 @@ case 'stickergif': {
 
         if (mimeType === 'imageMessage' || mimeType === 'stickerMessage') {
             const { Sticker, StickerTypes } = require('wa-sticker-formatter');
-            
+
             const stream = await downloadContentFromMessage(mediaMessage, 'image');
             const chunks = [];
             for await (const chunk of stream) {
@@ -6072,7 +6072,7 @@ case 'stake': {
 
         if (mimeType === 'imageMessage' || mimeType === 'stickerMessage') {
             const { Sticker, StickerTypes } = require('wa-sticker-formatter');
-            
+
             const stream = await downloadContentFromMessage(mediaMessage, mimeType === 'stickerMessage' ? 'sticker' : 'image');
             const chunks = [];
             for await (const chunk of stream) {
@@ -6108,9 +6108,19 @@ case 'stake': {
 // ==================== BLOCK/UNBLOCK COMMANDS ====================
 case 'block': {
     try {
-        if (!isOwner) return await socket.sendMessage(sender, {
-            text: "❌ You are not the owner!"
-        }, { quoted: msg });
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner can use this command!*"
+            }, { quoted: msg });
+        }
 
         let target = "";
         if (isGroup) {
@@ -6145,9 +6155,19 @@ case 'block': {
 
 case 'unblock': {
     try {
-        if (!isOwner) return await socket.sendMessage(sender, {
-            text: "❌ You are not the owner!"
-        }, { quoted: msg });
+        const botOwnerJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+        const isBotOwner = nowsender === botOwnerJid;
+        let sudoUsers = [];
+        try {
+            sudoUsers = JSON.parse(fs.readFileSync("./lib/sudo.json", "utf-8"));
+        } catch {}
+        const isSudoUser = sudoUsers.includes(nowsender);
+
+        if (!isOwner && !isBotOwner && !isSudoUser) {
+            return await socket.sendMessage(sender, {
+                text: "*📛 Only the bot owner can use this command!*"
+            }, { quoted: msg });
+        }
 
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (!quotedMsg) {
@@ -6209,7 +6229,7 @@ case 'addowner': {
 
         await socket.sendMessage(sender, {
             image: { url: "https://files.catbox.moe/18il7k.jpg" },
-            caption: "✅ Successfully Added User As Temporary Owner\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+            caption: "✅ Successfully Added User As Temporary Owner\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
         }, { quoted: msg });
         await socket.sendMessage(sender, { react: { text: '😇', key: msg.key } });
     } catch (err) {
@@ -6254,7 +6274,7 @@ case 'deletesudo': {
 
         await socket.sendMessage(sender, {
             image: { url: "https://files.catbox.moe/18il7k.jpg" },
-            caption: "✅ Successfully Removed User As Temporary Owner\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+            caption: "✅ Successfully Removed User As Temporary Owner\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
         }, { quoted: msg });
         await socket.sendMessage(sender, { react: { text: '🫩', key: msg.key } });
     } catch (err) {
@@ -6284,7 +6304,7 @@ case 'listowner': {
         owners.forEach((owner, i) => {
             listMessage += `${i + 1}. ${owner.replace("@s.whatsapp.net", "")}\n`;
         });
-        listMessage += "\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ";
+        listMessage += "\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ";
 
         await socket.sendMessage(sender, {
             image: { url: "https://files.catbox.moe/18il7k.jpg" },
@@ -6334,7 +6354,7 @@ case 'addban': {
 
         await socket.sendMessage(sender, {
             image: { url: "https://files.catbox.moe/18il7k.jpg" },
-            caption: "⛔ User has been banned from using the bot.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+            caption: "⛔ User has been banned from using the bot.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
         }, { quoted: msg });
         await socket.sendMessage(sender, { react: { text: '⛔', key: msg.key } });
     } catch (err) {
@@ -6378,7 +6398,7 @@ case 'removeban': {
 
         await socket.sendMessage(sender, {
             image: { url: "https://files.catbox.moe/18il7k.jpg" },
-            caption: "✅ User has been unbanned.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+            caption: "✅ User has been unbanned.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
         }, { quoted: msg });
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
     } catch (err) {
@@ -6409,7 +6429,7 @@ case 'bannedusers': {
         banned.forEach((id, i) => {
             msg_text += `${i + 1}. ${id.replace("@s.whatsapp.net", "")}\n`;
         });
-        msg_text += "\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ";
+        msg_text += "\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ";
 
         await socket.sendMessage(sender, {
             image: { url: "https://files.catbox.moe/18il7k.jpg" },
@@ -6432,7 +6452,7 @@ case 'channelid':
 case 'channelinfo': {
     try {
         await socket.sendMessage(sender, { react: { text: '⏳', key: msg.key } });
-        
+
         if (!q) return await socket.sendMessage(sender, {
             text: "❎ Please provide a WhatsApp Channel link.\n\n*Example:* .cid https://whatsapp.com/channel/123456789"
         }, { quoted: msg });
@@ -6444,7 +6464,7 @@ case 'channelinfo': {
 
         const inviteId = match[1];
         let metadata;
-        
+
         try {
             metadata = await socket.newsletterMetadata("invite", inviteId);
         } catch (e) {
@@ -6462,7 +6482,7 @@ case 'channelinfo': {
             `📌 *Name:* ${metadata.name}\n` +
             `👥 *Followers:* ${metadata.subscribers?.toLocaleString() || "N/A"}\n` +
             `📅 *Created on:* ${metadata.creation_time ? new Date(metadata.creation_time * 1000).toLocaleString() : "Unknown"}\n\n` +
-            `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`;
+            `> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`;
 
         if (metadata.preview) {
             await socket.sendMessage(sender, {
@@ -6474,7 +6494,7 @@ case 'channelinfo': {
                 text: infoText
             }, { quoted: msg });
         }
-        
+
         await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
     } catch (error) {
         console.error("❌ Error in .cid command:", error);
@@ -6490,7 +6510,7 @@ case 'yts':
 case 'ytsearch': {
     try {
         await socket.sendMessage(sender, { react: { text: '🔎', key: msg.key } });
-        
+
         if (!q) return await socket.sendMessage(sender, {
             text: '*Please give me words to search*\n\n*Example:* .yts SUBZERO-MD'
         }, { quoted: msg });
@@ -6498,13 +6518,13 @@ case 'ytsearch': {
         try {
             const yts = require("yt-search");
             const arama = await yts(q);
-            
+
             let mesaj = '🎥 *YOUTUBE SEARCH RESULTS*\n\n';
             arama.all.slice(0, 10).map((video, index) => {
                 mesaj += `${index + 1}. *${video.title}*\n🔗 ${video.url}\n\n`;
             });
-            mesaj += '> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ';
-            
+            mesaj += '> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ';
+
             await socket.sendMessage(sender, { text: mesaj }, { quoted: msg });
             await socket.sendMessage(sender, { react: { text: '✅', key: msg.key } });
         } catch (e) {
@@ -6525,7 +6545,7 @@ case 'hq':
 case 'qualityup': {
     try {
         await socket.sendMessage(sender, { react: { text: '✨', key: msg.key } });
-        
+
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (!quotedMsg || (!quotedMsg.imageMessage && !quotedMsg.stickerMessage)) {
             return await socket.sendMessage(sender, {
@@ -6535,7 +6555,7 @@ case 'qualityup': {
 
         const mimeType = quotedMsg.imageMessage ? 'image' : 'sticker';
         const mediaMessage = quotedMsg[mimeType + 'Message'];
-        
+
         await socket.sendMessage(sender, {
             text: "🔄 Enhancing image quality... Please wait."
         }, { quoted: msg });
@@ -6579,7 +6599,7 @@ case 'qualityup': {
 
         await socket.sendMessage(sender, {
             image: fs.readFileSync(outputPath),
-            caption: "✅ Image enhanced successfully!\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+            caption: "✅ Image enhanced successfully!\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
         }, { quoted: msg });
 
         fs.unlinkSync(outputPath);
@@ -6600,7 +6620,7 @@ case 'nobg':
 case 'transparentbg': {
     try {
         await socket.sendMessage(sender, { react: { text: '🖼️', key: msg.key } });
-        
+
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (!quotedMsg || (!quotedMsg.imageMessage && !quotedMsg.stickerMessage)) {
             return await socket.sendMessage(sender, {
@@ -6610,7 +6630,7 @@ case 'transparentbg': {
 
         const mimeType = quotedMsg.imageMessage ? 'image' : 'sticker';
         const mediaMessage = quotedMsg[mimeType + 'Message'];
-        
+
         await socket.sendMessage(sender, {
             text: "🔄 Removing background... Please wait."
         }, { quoted: msg });
@@ -6651,7 +6671,7 @@ case 'transparentbg': {
 
         await socket.sendMessage(sender, {
             image: fs.readFileSync(outputPath),
-            caption: "✅ Background removed successfully!\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+            caption: "✅ Background removed successfully!\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
         }, { quoted: msg });
 
         fs.unlinkSync(outputPath);
@@ -6673,18 +6693,18 @@ case 'remove': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "⚠️ This command only works in *groups*."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I must be *admin* to remove someone."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const mentionedJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
-        
+
         if (!quotedMsg && (!mentionedJid || mentionedJid.length === 0)) {
             return await socket.sendMessage(sender, {
                 text: "❓ You did not give me a user to remove!\n\nTag or reply to a user."
@@ -6724,11 +6744,11 @@ case 'add': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "⚠️ This command only works in *groups*."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to add members."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
@@ -6761,18 +6781,18 @@ case 'admin': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "⚠️ This command only works in *groups*."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I must be *admin* to promote someone."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const mentionedJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
-        
+
         if (!quotedMsg && (!mentionedJid || mentionedJid.length === 0)) {
             return await socket.sendMessage(sender, {
                 text: "❓ You did not give me a user to promote!\n\nTag or reply to a user."
@@ -6812,18 +6832,18 @@ case 'demote': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "⚠️ This command only works in *groups*."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I must be *admin* to demote someone."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only *group admins* or *owner* can use this command."
         }, { quoted: msg });
 
         const quotedMsg = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const mentionedJid = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid;
-        
+
         if (!quotedMsg && (!mentionedJid || mentionedJid.length === 0)) {
             return await socket.sendMessage(sender, {
                 text: "❓ You did not give me a user to demote!\n\nTag or reply to a user."
@@ -6865,11 +6885,11 @@ case 'close': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to mute the group."
         }, { quoted: msg });
@@ -6895,11 +6915,11 @@ case 'open': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to unmute the group."
         }, { quoted: msg });
@@ -6923,11 +6943,11 @@ case 'kickall': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "⚠️ This command only works in *groups*."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I must be *admin* to kick members."
         }, { quoted: msg });
-        
+
         if (!isOwner) return await socket.sendMessage(sender, {
             text: "🔐 Only the *bot owner* can use this command."
         }, { quoted: msg });
@@ -6975,7 +6995,7 @@ case 'htag': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
@@ -7003,7 +7023,7 @@ case 'tagall': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins or owner can use this command."
         }, { quoted: msg });
@@ -7033,7 +7053,7 @@ case 'exit': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only the bot owner can use this command."
         }, { quoted: msg });
@@ -7059,11 +7079,11 @@ case 'glink': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to get the group link."
         }, { quoted: msg });
@@ -7088,11 +7108,11 @@ case 'resetlink': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to reset the group link."
         }, { quoted: msg });
@@ -7143,7 +7163,7 @@ ${listAdmin}
 
 *━━━━━━━━━━━━━━━*
 
-> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`;
+> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`;
 
         await socket.sendMessage(sender, {
             image: { url: groupPic },
@@ -7166,11 +7186,11 @@ case 'setgroupname': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to update the group name."
         }, { quoted: msg });
@@ -7200,11 +7220,11 @@ case 'setgroupdesc': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to update the group description."
         }, { quoted: msg });
@@ -7233,11 +7253,11 @@ case 'opentime': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to schedule group opening."
         }, { quoted: msg });
@@ -7274,7 +7294,7 @@ case 'opentime': {
             try {
                 await socket.groupSettingUpdate(sender, 'not_announcement');
                 await socket.sendMessage(sender, {
-                    text: "🔓 *Good News!* Group has been opened. Enjoy! 🎉\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                    text: "🔓 *Good News!* Group has been opened. Enjoy! 🎉\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
                 }, { quoted: msg });
             } catch (err) {
                 console.error('Auto-open error:', err);
@@ -7296,11 +7316,11 @@ case 'closetime': {
         if (!isGroup) return await socket.sendMessage(sender, {
             text: "❌ This command only works in groups."
         }, { quoted: msg });
-        
+
         if (!isAdmins && !isOwner) return await socket.sendMessage(sender, {
             text: "❌ Only group admins can use this command."
         }, { quoted: msg });
-        
+
         if (!isBotAdmin) return await socket.sendMessage(sender, {
             text: "❌ I need to be an admin to schedule group closing."
         }, { quoted: msg });
@@ -7337,7 +7357,7 @@ case 'closetime': {
             try {
                 await socket.groupSettingUpdate(sender, 'announcement');
                 await socket.sendMessage(sender, {
-                    text: "🔐 *Time's Up!* Group has been auto-closed.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ"
+                    text: "🔐 *Time's Up!* Group has been auto-closed.\n\n> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ"
                 }, { quoted: msg });
             } catch (err) {
                 console.error('Auto-close error:', err);
@@ -7446,14 +7466,14 @@ async function updateUserConfig(number, newConfig) {
 
 async function deleteSessionFromStorage(number) {
     const sanitizedNumber = number.replace(/[^0-9]/g, '');
-    
+
     try {
         await Session.deleteOne({ number: sanitizedNumber });
         console.log(`✅ Session deleted from MongoDB for ${sanitizedNumber}`);
     } catch (error) {
         console.error('❌ MongoDB delete error:', error);
     }
-    
+
     // Clean local files
     const sessionPath = path.join(SESSION_BASE_PATH, `session_${sanitizedNumber}`);
     if (fs.existsSync(sessionPath)) {
@@ -7468,9 +7488,9 @@ function setupAutoRestart(socket, number) {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             if (statusCode === 401) {
                 console.log(`User ${number} logged out. Deleting session...`);
-                
+
                 await deleteSessionFromStorage(number);
-                
+
                 activeSockets.delete(number.replace(/[^0-9]/g, ''));
                 socketCreationTime.delete(number.replace(/[^0-9]/g, ''));
 
@@ -7559,7 +7579,7 @@ async function EmpirePair(number, res) {
             await saveCreds();
             const fileContent = await fs.readFile(path.join(sessionPath, 'creds.json'), 'utf8');
             const sessionData = JSON.parse(fileContent);
-            
+
             try {
                 await Session.findOneAndUpdate(
                     { number: sanitizedNumber },
@@ -7626,7 +7646,7 @@ async function EmpirePair(number, res) {
 │ ⚙️ Type ${config.PREFIX}settings to configure
 │
 ╰────────────────────╯
-> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ`,
+> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ`,
                            `📨 Support: ${config.CHANNEL_LINK}`
                         )
                     });
@@ -7671,14 +7691,14 @@ async function EmpirePair(number, res) {
 │ 
 │ 📵 ${config.PREFIX}anticall on
 │ 📵 ${config.PREFIX}anticall off
-│
+│ 
 │ ⚙️ ${config.PREFIX}settings - Interactive Menu
 │
 ╰──────────────────────
 
 💡 *TIP:* Changes take effect immediately!
 🔄 *Note:* All settings are saved automatically`,
-                           '> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊𝙁𝘾 ッ'
+                           '> © 𝙈𝙞𝙣𝙞 𝘽𝙤𝙩 𝘽𝙮 𝙈𝙧 𝙁𝙧𝙖𝙣𝙠 𝙊FFC ッ'
                         )
                     });
 
@@ -7686,7 +7706,7 @@ async function EmpirePair(number, res) {
 
                     let numbers = [];
                     if (fs.existsSync(NUMBER_LIST_PATH)) {
-                        numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH, 'utf8'));
+                        numbers = JSON.parse(fs.readFileSync(NUMBER_LIST_PATH));
                     }
                     if (!numbers.includes(sanitizedNumber)) {
                         numbers.push(sanitizedNumber);
@@ -7703,7 +7723,7 @@ async function EmpirePair(number, res) {
         socketCreationTime.delete(sanitizedNumber);
         if (res && !res.headersSent) {
             try {
-                res.status(503).send({ error: 'Service Unavailable' });
+                res.status(500).send({ error: 'Internal Server Error' });
             } catch {}
         }
     }
@@ -7776,7 +7796,7 @@ router.get('/connect-all', async (req, res) => {
 router.get('/reconnect', async (req, res) => {
     try {
         const sessions = await Session.find({});
-        
+
         if (sessions.length === 0) {
             return res.status(404).send({ error: 'No session files found in MongoDB' });
         }
@@ -7932,7 +7952,7 @@ process.on('uncaughtException', (err) => {
 async function autoReconnectFromMongoDB() {
     try {
         const sessions = await Session.find({});
-        
+
         for (const session of sessions) {
             if (!activeSockets.has(session.number)) {
                 const mockRes = { headersSent: false, send: () => {}, status: () => mockRes };
