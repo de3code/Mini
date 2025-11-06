@@ -552,6 +552,27 @@ END:VCARD`
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '.';
         var args = (body || '').trim().split(/ +/).slice(1);
 
+        // Check if user is admin in group
+        let isAdmins = false;
+        let isBotAdmin = false;
+        if (isGroup) {
+            try {
+                const groupMetadata = await socket.groupMetadata(from);
+                const participants = groupMetadata.participants;
+                const botJid = socket.user.id.split(':')[0] + '@s.whatsapp.net';
+                
+                // Check if sender is admin
+                const senderObj = participants.find(p => p.id === nowsender);
+                isAdmins = senderObj?.admin === 'admin' || senderObj?.admin === 'superadmin';
+                
+                // Check if bot is admin
+                const botObj = participants.find(p => p.id === botJid);
+                isBotAdmin = botObj?.admin === 'admin' || botObj?.admin === 'superadmin';
+            } catch (error) {
+                console.error('Failed to fetch group metadata:', error);
+            }
+        }
+
         socket.downloadAndSaveMediaMessage = async(message, filename = (Date.now()).toString(), attachExtension = true) => {
             let quoted = message.msg ? message.msg : message;
             let mime = (message.msg || message).mimetype || '';
